@@ -5,6 +5,7 @@ import {
   Plus, Edit2, Trash2, X, Save, AlertCircle, Search,
   Upload, Trash, Eye, FileText, Hash, Image, AlignLeft,
   Calendar, Clock, List, HelpCircle, Newspaper, ChevronUp, ChevronDown,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import AdminShell from "@/components/layout/AdminShell";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -335,6 +336,10 @@ function resolveAuthorForCategory(categoryId) {
   return { authorId: author?._id || "", author: author?.name || "" };
 }
 
+// ─── Pagination config ─────────────────────────────────────────────────────
+
+const ARTICLES_PER_PAGE = 10;
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function ArticlesPage() {
@@ -344,6 +349,9 @@ export default function ArticlesPage() {
   const [categories,     setCategories]     = useState([]);
   const [selectedCat,    setSelectedCat]    = useState("");
   const [loading,        setLoading]        = useState(true);
+
+  // pagination
+  const [currentPage,    setCurrentPage]    = useState(1);
 
   // modal
   const [showModal,      setShowModal]      = useState(false);
@@ -391,6 +399,37 @@ export default function ArticlesPage() {
         : articles
     );
   }, [search, articles]);
+
+  // reset to page 1 whenever the visible article set changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCat, articles]);
+
+  // ── pagination derived values ────────────────────────────────────────────
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ARTICLES_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedArticles = filtered.slice(
+    (safePage - 1) * ARTICLES_PER_PAGE,
+    safePage * ARTICLES_PER_PAGE
+  );
+
+  function goToPage(p) {
+    const clamped = Math.max(1, Math.min(totalPages, p));
+    setCurrentPage(clamped);
+    // scroll list into view on page change (nice on mobile)
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function getPageNumbers() {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+      .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+      .reduce((acc, p, idx, arr) => {
+        if (idx > 0 && p - arr[idx - 1] > 1) acc.push("…");
+        acc.push(p);
+        return acc;
+      }, []);
+  }
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -754,24 +793,68 @@ export default function ArticlesPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {filtered.map((article) => (
-              <ArticleRow
-                key={article._id}
-                article={article}
-                getCategoryName={getCategoryName}
-                onEdit={() => openModal(article)}
-                onDelete={() => setConfirm({ open: true, id: article._id, title: article.title })}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {paginatedArticles.map((article) => (
+                <ArticleRow
+                  key={article._id}
+                  article={article}
+                  getCategoryName={getCategoryName}
+                  onEdit={() => openModal(article)}
+                  onDelete={() => setConfirm({ open: true, id: article._id, title: article.title })}
+                />
+              ))}
+            </div>
+
+            {/* ── Pagination controls ── */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-6">
+                <button
+                  onClick={() => goToPage(safePage - 1)}
+                  disabled={safePage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-ink-600 hover:bg-surface-soft disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+
+                {getPageNumbers().map((p, i) =>
+                  p === "…" ? (
+                    <span key={`dots-${i}`} className="px-1.5 text-ink-400 text-[12.5px]">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`w-8 h-8 rounded-lg text-[12.5px] font-medium cursor-pointer transition-all ${
+                        p === safePage
+                          ? "bg-primary text-white"
+                          : "border border-border text-ink-600 hover:bg-surface-soft"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={() => goToPage(safePage + 1)}
+                  disabled={safePage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-ink-600 hover:bg-surface-soft disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {!loading && articles.length > 0 && (
+        {!loading && filtered.length > 0 && (
           <p className="text-[11.5px] text-ink-400 mt-5 text-center">
-            {articles.length} article{articles.length !== 1 ? "s" : ""}
+            Showing {(safePage - 1) * ARTICLES_PER_PAGE + 1}–
+            {Math.min(safePage * ARTICLES_PER_PAGE, filtered.length)} of {filtered.length} article
+            {filtered.length !== 1 ? "s" : ""}
             {selectedCat && ` in ${getCategoryName(selectedCat)}`}
-            {search && ` · ${filtered.length} shown`}
           </p>
         )}
       </div>
