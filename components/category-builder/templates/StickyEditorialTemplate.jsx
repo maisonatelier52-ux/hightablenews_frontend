@@ -1,9 +1,12 @@
+
+
 // "use client";
 
 // import Link from "next/link";
 // import { Mail, Newspaper } from "lucide-react";
 // import { useCategoryContent, imgStyle, gradFor, ArticleLink } from "../shared";
-// import { articleHref } from "@/lib/articlesSource";
+// import { articleHref, authorHref } from "@/lib/articlesSource";
+// import { getAuthors } from "@/lib/authorsApi";
 
 // /** Template 1 — Sticky Sidebar Editorial (matches the HighTableNews Business
 //  *  category page reference): dark masthead banner, lead story, top stories
@@ -96,7 +99,7 @@
 
 //       <div className="w-full px-4 sm:px-6 lg:px-10">
 //         {/* ── BREADCRUMB ── */}
-//         <nav
+//         {/* <nav
 //           aria-label="Breadcrumb"
 //           className={`${SANS} py-[10px] text-[0.7rem] tracking-[0.03em] flex gap-[6px] items-center flex-wrap`}
 //           style={{ color: GRAY }}
@@ -104,7 +107,7 @@
 //           <Link href="/" className="hover:opacity-75" style={{ color: BLUE }}>Home</Link>
 //           <span style={{ color: LINE_STRONG }}>/</span>
 //           <span>{categoryName}</span>
-//         </nav>
+//         </nav> */}
 
 //         <div className={stacked ? "flex flex-col gap-8 pt-[6px]" : "flex gap-0 pt-[6px] items-start"}>
 //           {/* ── MAIN — 75% ── */}
@@ -114,6 +117,7 @@
 //               width: stacked ? "100%" : sidebarOn ? "75%" : "100%",
 //               flex: stacked ? "1 1 auto" : sidebarOn ? "0 0 75%" : "1 1 auto",
 //               borderRight: sidebarOn ? `1px solid ${LINE_STRONG}` : "none",
+//               ...(sidebarOn ? { position: "sticky", top: 20, alignSelf: "flex-start" } : {}),
 //             }}
 //           >
 //             {/* Lead story */}
@@ -356,14 +360,41 @@
 //       {data.authors?.enabled && (
 //         <div>
 //           <ModuleHdr>{data.authors.title}</ModuleHdr>
-//           {Array.from({ length: data.authors.count ?? 4 }).map((_, i, arr) => (
-//             <div key={i} className="flex gap-[10px] items-center py-[9px]" style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}>
-//               <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: PAPER }}>
-//                 <Newspaper size={14} style={{ color: GRAY }} />
-//               </div>
-//               <p className={`${SANS} text-[0.78rem] font-semibold`} style={{ color: "#333333" }}>Correspondent {i + 1}</p>
-//             </div>
-//           ))}
+//           {(() => {
+//             const authors = (getAuthors() || []).slice(0, data.authors.count ?? 4);
+//             if (authors.length === 0) {
+//               return (
+//                 <p className={`${SANS} text-[0.74rem]`} style={{ color: GRAY }}>
+//                   No correspondents yet — add authors on the Authors page.
+//                 </p>
+//               );
+//             }
+//             return authors.map((author, i, arr) => {
+//               const href = authorHref(author.slug);
+//               const Item = href ? Link : "div";
+//               const initials = (author.name || "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+//               return (
+//                 <Item
+//                   key={author._id}
+//                   {...(href ? { href } : {})}
+//                   className="flex gap-[10px] items-center py-[9px] group"
+//                   style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}
+//                 >
+//                   {author.profileImage ? (
+//                     <img src={author.profileImage} alt={author.name} className="w-10 h-10 rounded-full flex-shrink-0 object-cover" />
+//                   ) : (
+//                     <div
+//                       className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold"
+//                       style={{ background: `linear-gradient(135deg, ${gradFor(author.name)})`, fontSize: "0.68rem" }}
+//                     >
+//                       {initials || <Newspaper size={14} style={{ color: GRAY }} />}
+//                     </div>
+//                   )}
+//                   <p className={`${SANS} text-[0.78rem] font-semibold group-hover:opacity-75`} style={{ color: "#333333" }}>{author.name}</p>
+//                 </Item>
+//               );
+//             });
+//           })()}
 //         </div>
 //       )}
 //     </aside>
@@ -510,9 +541,9 @@ export default function StickyEditorialTemplate({ data, category, device = "desk
                       {data.hero?.showLiveBadge && <span style={{ color: LINE_STRONG }}>•</span>}
                       <span className={`${SANS} text-[0.72rem] font-bold tracking-[0.12em] uppercase`} style={{ color: hero.categoryColor || RED }}>{hero.category}</span>
                     </div>
-                    <h2 className={`${HEAD} font-black leading-[1.15] mb-3`} style={{ fontSize: stacked ? "1.4rem" : "1.75rem", color: INK }}>
+                    <h3 className={`${HEAD} font-black leading-[1.15] mb-3`} style={{ fontSize: stacked ? "1.4rem" : "1.75rem", color: INK }}>
                       <span className="group-hover:opacity-75">{hero.title}</span>
-                    </h2>
+                    </h3>
                     {data.hero?.showDescription && (
                       <p className={`${BODY} leading-[1.6] mb-[10px]`} style={{ fontSize: "0.9rem", color: "#333333" }}>{hero.excerpt}</p>
                     )}
@@ -595,7 +626,7 @@ export default function StickyEditorialTemplate({ data, category, device = "desk
                       )}
                       <div className="flex flex-col justify-center min-w-0">
                         <div className={`${SANS} text-[0.68rem] font-bold tracking-[0.12em] uppercase mb-1`} style={{ color: a.categoryColor || RED }}>{a.category}</div>
-                        <h4 className={`${HEAD} text-[1.06rem] font-bold leading-[1.28] mb-[6px] group-hover:opacity-75`} style={{ color: INK }}>{a.title}</h4>
+                        <h3 className={`${HEAD} text-[1.06rem] font-bold leading-[1.28] mb-[6px] group-hover:opacity-75`} style={{ color: INK }}>{a.title}</h3>
                         {data.articleList?.showDescription && (
                           <p className={`${BODY} text-[0.82rem] leading-[1.5] mb-[7px] line-clamp-2`} style={{ color: "#333333" }}>{a.excerpt}</p>
                         )}
@@ -627,21 +658,34 @@ export default function StickyEditorialTemplate({ data, category, device = "desk
   );
 }
 
+// Renders the section's visible label as a real <h2> instead of a plain,
+// non-semantic <span> — every section on the page (Lead Story, Top
+// Stories, Opinion, More From Category) now produces one real heading no
+// matter which combination of sections a given category has content for.
+// Keeping every section's own article titles one level below it (h3) means
+// the page's heading levels never skip (h1 -> h2 -> h3 -> h2 -> h3 ...),
+// which is what Lighthouse's "Heading elements are not in a sequentially-
+// descending order" audit checks for, and it holds regardless of which
+// blocks are enabled/have content for a given category.
 function SectionHdr({ label, count }) {
   return (
     <div className="flex items-center gap-[10px] mb-4 mt-1">
-      <span className={`${SANS} text-[0.62rem] font-extrabold tracking-[0.16em] uppercase px-[9px] py-[3px] whitespace-nowrap`} style={{ color: OFFWHITE, background: INK }}>{label}</span>
+      <h2 className={`${SANS} text-[0.62rem] font-extrabold tracking-[0.16em] uppercase px-[9px] py-[3px] whitespace-nowrap m-0`} style={{ color: OFFWHITE, background: INK }}>{label}</h2>
       <hr className="flex-1 border-none border-t" style={{ borderColor: LINE_STRONG }} />
       {count && <span className={`${SANS} text-[0.66rem] whitespace-nowrap`} style={{ color: GRAY }}>{count}</span>}
     </div>
   );
 }
 
+// Same idea for the sidebar's module labels (Most Read, Latest) — the
+// <aside> is its own content region, so starting it at h2 (rather than
+// continuing the main column's h3/h4 count) keeps it from ever skipping a
+// level regardless of what did or didn't render in <main> above it.
 function ModuleHdr({ children }) {
   return (
-    <div className={`${SANS} text-[0.62rem] font-extrabold tracking-[0.2em] uppercase mb-3 pb-[6px]`} style={{ color: INK, borderBottom: `2px solid ${INK}` }}>
+    <h2 className={`${SANS} text-[0.62rem] font-extrabold tracking-[0.2em] uppercase mb-3 pb-[6px] m-0`} style={{ color: INK, borderBottom: `2px solid ${INK}` }}>
       {children}
-    </div>
+    </h2>
   );
 }
 
@@ -663,9 +707,9 @@ function Sidebar({ data, mostRead, latest, stacked }) {
                   )}
                   <div className="w-[60px] h-[50px] flex-shrink-0 overflow-hidden" style={bgFill(a)} />
                   <div className="min-w-0">
-                    <h5 className={`${HEAD} text-[0.8rem] font-bold leading-[1.25]`} style={{ color: INK }}>
+                    <h3 className={`${HEAD} text-[0.8rem] font-bold leading-[1.25]`} style={{ color: INK }}>
                       <Item {...(href ? { href } : {})} className="hover:opacity-75">{a.title}</Item>
-                    </h5>
+                    </h3>
                     <div className={`${SANS} text-[0.72rem] mt-[2px]`} style={{ color: GRAY }}>{a.date}</div>
                   </div>
                 </li>
@@ -686,9 +730,9 @@ function Sidebar({ data, mostRead, latest, stacked }) {
                 <li key={a.id} className="flex gap-[10px] items-start py-[9px] group" style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}>
                   <div className="w-16 h-[50px] flex-shrink-0 overflow-hidden" style={bgFill(a)} />
                   <div className="min-w-0">
-                    <h5 className={`${HEAD} text-[0.8rem] font-bold leading-[1.25] mb-[2px]`} style={{ color: INK }}>
+                    <h3 className={`${HEAD} text-[0.8rem] font-bold leading-[1.25] mb-[2px]`} style={{ color: INK }}>
                       <Item {...(href ? { href } : {})} className="hover:opacity-75">{a.title}</Item>
-                    </h5>
+                    </h3>
                     <div className={`${SANS} text-[0.72rem]`} style={{ color: GRAY }}>{a.date}</div>
                   </div>
                 </li>

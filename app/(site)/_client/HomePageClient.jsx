@@ -38,12 +38,14 @@ import { HomepageBlocksRenderer } from "@/components/homepage-builder/LivePrevie
 import Skeleton from "@/components/ui/Skeleton";
 import { getHomepage } from "@/lib/api";
 import { preloadCategoriesAndArticles, seedCategoriesAndArticles } from "@/lib/categoriesArticlesApi";
+import { seedAuthors } from "@/lib/authorsApi";
 import { useResponsiveDevice } from "@/lib/useResponsiveDevice";
 
 export default function HomePageClient({
   initialHomepage = null,
   initialCategories = null,
   initialArticles = null,
+  initialAuthors = null,
   initialDevice = "desktop",
 }) {
   // Seed the shared categories/articles cache synchronously, on the very
@@ -54,6 +56,13 @@ export default function HomePageClient({
   // populated (see lib/categoriesArticlesApi.js).
   if (initialCategories && initialArticles) {
     seedCategoriesAndArticles(initialCategories, initialArticles);
+  }
+  // Same for authors — this is what the homepage's "Authors" block
+  // (getAuthors()) reads synchronously. Previously it only got populated by
+  // DataProvider's client-only preloadAuthors() effect, so the block always
+  // fell back to its sample/placeholder authors in the first HTML response.
+  if (initialAuthors) {
+    seedAuthors(initialAuthors);
   }
 
   const [homepage, setHomepage] = useState(initialHomepage);

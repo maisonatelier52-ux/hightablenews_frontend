@@ -56,7 +56,6 @@
 // }
 
 // chnaged for seo
-
 import HomePageClient from "./_client/HomePageClient";
 import JsonLd from "@/components/site/JsonLd";
 import SiteChrome from "@/components/site/SiteChrome";
@@ -87,11 +86,12 @@ export default async function HomePage() {
   // renders it on its very first pass (server-side) instead of showing a
   // skeleton and fetching client-side. That's what puts real headings and
   // article text into the first HTML response instead of an empty shell.
-  const [settings, homepage, categories, articlesRes] = await Promise.all([
+  const [settings, homepage, categories, articlesRes, authors] = await Promise.all([
     serverApi.getSiteSettings(),
     serverApi.getHomepage(),
     serverApi.getCategories(),
     serverApi.getPublishedArticles(60),
+    serverApi.getAuthors(),
   ]);
   const siteName = settings?.siteName || "HighTableNews";
   const device = getInitialDeviceFromRequest();
@@ -145,6 +145,7 @@ export default async function HomePage() {
         initialHomepage={homepage}
         initialCategories={categories}
         initialArticles={articlesRes}
+        initialAuthors={authors}
         initialDevice={device}
       />
     </SiteChrome>
