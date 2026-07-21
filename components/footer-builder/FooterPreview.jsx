@@ -46,6 +46,7 @@ function ColumnLinks({ col, theme, fontSize }) {
           {(col.links || []).map((link) => (
             <li key={link.id}>
               <a
+                title={link.label}
                 href={link.url || "#"}
                 className="inline-block transition-all duration-300 hover:pl-1"
                 style={{ color: theme.link, fontSize: fontSize ?? 14 }}
@@ -299,6 +300,7 @@ export default function FooterPreview({ footer, device = "desktop" }) {
                 <span key={link.id || i} className="flex items-center gap-3">
                   {i > 0 && <span style={{ color: theme.border }}>•</span>}
                   <a
+                    title={link.label}
                     href={link.url || "#"}
                     className="text-[12px] transition-colors duration-300"
                     style={{ color: theme.link }}
@@ -320,6 +322,7 @@ export default function FooterPreview({ footer, device = "desktop" }) {
                   const hasLink = s.url && s.url !== "#";
                   return (
                     <a
+                      title={s.platform}
                       key={s.id}
                       href={s.url || "#"}
                       target={hasLink ? "_blank" : undefined}
