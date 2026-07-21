@@ -39,7 +39,12 @@ export default function CarouselMagazineTemplate({ data, category, device = "des
 
   return (
     <div className="bg-white">
-      <CategoryBanner banner={data.banner} categoryName={category?.name} />
+      <CategoryBanner
+        banner={data.banner}
+        categoryName={category?.name}
+        seoTitle={category?.seoTitle}
+        description={category?.description}
+      />
 
       <div className="mx-auto px-4 sm:px-6 py-7" style={{ maxWidth: 1600 }}>
         {/* ── Hero carousel ── */}

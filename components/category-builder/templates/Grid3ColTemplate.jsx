@@ -83,7 +83,12 @@ export default function Grid3ColTemplate({ data, category, device = "desktop" })
 
   return (
     <div className="bg-white">
-      <CategoryBanner banner={data.banner} categoryName={category?.name} />
+      <CategoryBanner
+        banner={data.banner}
+        categoryName={category?.name}
+        seoTitle={category?.seoTitle}
+        description={category?.description}
+      />
       <div className="mx-auto px-4 sm:px-6 py-7" style={{ maxWidth: 1200 }}>
         <div className={`grid gap-x-7 gap-y-8 ${gridCols}`}>
           {articles.map((a) => (

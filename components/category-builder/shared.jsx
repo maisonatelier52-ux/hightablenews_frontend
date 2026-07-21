@@ -91,8 +91,28 @@ function useCategoryContent(category, counts) {
 
 // ─── Category banner (shared across all 4 templates) ──────────────────────
 
-function CategoryBanner({ banner, categoryName }) {
-  const title = categoryName || banner.title || "Category";
+// Builds the page's single <h1>. SEO tools (and best practice) want the H1
+// to closely echo the <title> tag's keywords rather than just the bare
+// category name ("Power" was flagged as too short and keyword-less vs. the
+// title "Power | Global Leaders, Influencers & Decision Makers"). When the
+// admin has set an SEO Title for the category, we reuse it here — swapping
+// the " | " title-tag separator for an em dash so it still reads naturally
+// as a heading — so the H1 and <title> stay "the same or very similar" as
+// recommended, without needing a brand-new admin field.
+function deriveH1({ seoTitle, categoryName, bannerTitle }) {
+  if (seoTitle && seoTitle.trim()) return seoTitle.trim().replace(/\s*\|\s*/g, " — ");
+  return categoryName || bannerTitle || "Category";
+}
+
+function CategoryBanner({ banner, categoryName, seoTitle, description }) {
+  const title = deriveH1({ seoTitle, categoryName, bannerTitle: banner.title });
+  // Prefer the category's own admin-written Description (unique per
+  // category, and the same text search engines see as fodder for the page)
+  // over the generic, shared-across-templates banner.description. Previously
+  // the category description was only ever placed into <meta name="description">
+  // (invisible to on-page text analysis) and never actually rendered — which
+  // is why keyword-coherence checks against the visible page text scored 0.
+  const bodyText = description || banner.description;
   return (
     <div
       className="relative overflow-hidden rounded-t-lg"
@@ -110,8 +130,8 @@ function CategoryBanner({ banner, categoryName }) {
       <div className="relative px-6 py-7 sm:px-8 sm:py-9">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-red-500 mb-1.5">Section</p>
         <h1 className="text-white font-serif text-[28px] sm:text-[34px] font-bold leading-none">{title}</h1>
-        {banner.description && (
-          <p className="text-white/60 text-[12.5px] mt-2 max-w-lg leading-snug">{banner.description}</p>
+        {bodyText && (
+          <p className="text-white/60 text-[12.5px] mt-2 max-w-lg leading-snug">{bodyText}</p>
         )}
       </div>
     </div>

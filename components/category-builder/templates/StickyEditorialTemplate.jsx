@@ -1,5 +1,3 @@
-
-
 // "use client";
 
 // import Link from "next/link";
@@ -470,6 +468,18 @@ export default function StickyEditorialTemplate({ data, category, device = "desk
   const stacked = isMobile || isTablet;
   const sidebarOn = !stacked;
   const categoryName = category?.name || "Category";
+  // Same H1 logic as the shared CategoryBanner (components/category-builder/
+  // shared.jsx): reuse the admin's SEO Title — swapping its " | " separator
+  // for an em dash — so the H1 carries the same keywords as <title> instead
+  // of just the bare, keyword-thin category name.
+  const h1Text = category?.seoTitle?.trim()
+    ? category.seoTitle.trim().replace(/\s*\|\s*/g, " — ")
+    : categoryName;
+  // Prefer the category's own admin-written Description over the generic
+  // template-level banner.description — it's unique per category and is
+  // what actually needs to be visible on the page for keyword-coherence
+  // checks (previously it was only ever placed in <meta name="description">).
+  const bannerBodyText = category?.description || data.banner?.description;
 
   return (
     <div style={{ background: OFFWHITE }}>
@@ -488,11 +498,11 @@ export default function StickyEditorialTemplate({ data, category, device = "desk
           <div>
             <span className={`${SANS} text-[0.62rem] font-extrabold tracking-[0.22em] uppercase block mb-[6px]`} style={{ color: GOLD }}>Section</span>
             <h1 className={`${HEAD} font-black text-white leading-[1.05] tracking-[-0.01em]`} style={{ fontSize: "2.4rem" }}>
-              {categoryName}
+              {h1Text}
             </h1>
-            {data.banner?.description && (
+            {bannerBodyText && (
               <p className={`${BODY} italic mt-2 max-w-[480px] leading-[1.5]`} style={{ fontSize: "0.86rem", color: "#999999" }}>
-                {data.banner.description}
+                {bannerBodyText}
               </p>
             )}
           </div>

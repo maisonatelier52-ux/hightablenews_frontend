@@ -76,7 +76,12 @@ export default function Grid2ColTemplate({ data, category, device = "desktop" })
 
   return (
     <div className="bg-white">
-      <CategoryBanner banner={data.banner} categoryName={category?.name} />
+      <CategoryBanner
+        banner={data.banner}
+        categoryName={category?.name}
+        seoTitle={category?.seoTitle}
+        description={category?.description}
+      />
       <div className="mx-auto px-4 sm:px-6 py-7" style={{ maxWidth: 1200 }}>
         <div className={`grid gap-x-8 gap-y-7 ${isMobile ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
           {articles.map((a) => (
