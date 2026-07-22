@@ -5,7 +5,7 @@ import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
 import CategoryDonut from "@/components/dashboard/CategoryDonut";
-import DeviceToggle from "@/components/ui/DeviceToggle";
+import MobileSitePreview from "@/components/dashboard/MobileSitePreview";
 import {
   Newspaper,
   Mail,
@@ -80,9 +80,9 @@ export default function DashboardPage() {
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [authors, setAuthors] = useState([]);
-  const [previewDevice, setPreviewDevice] = useState("desktop");
   const [activity, setActivity] = useState(null);
   const [backendStats, setBackendStats] = useState(null);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   const loadAll = useCallback(async () => {
     await Promise.all([preloadCategoriesAndArticlesAdmin(), preloadAuthorsAdmin()]);
@@ -236,70 +236,51 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick build + live preview */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8 items-stretch">
           <div className="xl:col-span-2">
-            <h3 className="text-[13px] font-semibold text-ink-500 uppercase tracking-wide mb-3">Quick access</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {BUILDERS.map((b) => {
-                const Icon = b.icon;
-                return (
-                  <Link
-                    key={b.href}
-                    href={b.href}
-                    className="group rounded-card border border-border bg-white p-5 shadow-soft hover:shadow-lift hover:border-primary/30 transition-all"
-                  >
-                    <div className="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center text-primary mb-3">
-                      <Icon size={17} />
-                    </div>
-                    <p className="text-[14px] font-semibold text-ink-900">{b.title}</p>
-                    <p className="text-[12.5px] text-ink-500 mt-1">{b.desc}</p>
-                    <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-primary mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Open builder <ArrowRight size={13} />
-                    </span>
-                  </Link>
-                );
-              })}
+            {/*
+              Sticky inner wrapper: the OUTER div above is stretched by
+              `items-stretch` to match the taller Mobile Site Preview
+              column's height. This inner wrapper then sticks to the top
+              of the viewport while the page scrolls, and can only move
+              as far as its stretched parent's bottom edge — which lines
+              up with the bottom of the Mobile Site Preview. So it stays
+              pinned until that preview finishes scrolling past, then
+              releases naturally back into the normal flow.
+            */}
+            <div className="xl:sticky xl:top-6">
+              <h3 className="text-[13px] font-semibold text-ink-500 uppercase tracking-wide mb-3">Quick access</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {BUILDERS.map((b) => {
+                  const Icon = b.icon;
+                  return (
+                    <Link
+                      key={b.href}
+                      href={b.href}
+                      className="group rounded-card border border-border bg-white p-5 shadow-soft hover:shadow-lift hover:border-primary/30 transition-all"
+                    >
+                      <div className="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center text-primary mb-3">
+                        <Icon size={17} />
+                      </div>
+                      <p className="text-[14px] font-semibold text-ink-900">{b.title}</p>
+                      <p className="text-[12.5px] text-ink-500 mt-1">{b.desc}</p>
+                      <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-primary mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Open builder <ArrowRight size={13} />
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Live site preview */}
-          <div className="rounded-card border border-border bg-white shadow-soft overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-border flex items-center justify-between gap-2">
-              <h3 className="text-[13.5px] font-semibold text-ink-900">Live Site Preview</h3>
-              <DeviceToggle device={previewDevice} onChange={setPreviewDevice} />
-            </div>
-            <div className="bg-surface-soft p-3 flex justify-center">
-              <div
-                className="bg-white rounded-md border border-border overflow-hidden shadow-soft transition-all"
-                style={{
-                  width: previewDevice === "desktop" ? "100%" : previewDevice === "tablet" ? "420px" : "300px",
-                  height: 300,
-                }}
-              >
-                <iframe
-                  src="/"
-                  title="Live site preview"
-                  scrolling="no"
-                  className="w-full h-full pointer-events-none"
-                  style={{ border: 0 }}
-                />
-              </div>
-            </div>
-            <div className="px-4 py-3 border-t border-border">
-              <Link
-                href="/"
-                target="_blank"
-                className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-primary hover:underline"
-              >
-                Open live site <ExternalLink size={12} />
-              </Link>
-            </div>
-          </div>
+          {/* Mobile site preview */}
+          <MobileSitePreview src="/" />
         </div>
 
         {/* Analytics + top categories */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-8">
-          <div className="xl:col-span-2 rounded-card border border-border bg-white shadow-soft p-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8 items-stretch">
+          <div className="rounded-card border border-border bg-white shadow-soft p-5 flex flex-col">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-[14px] font-semibold text-ink-900">Site Analytics</h3>
               <span className="text-[12px] text-ink-400">Last {chartLabels.length} days</span>
@@ -313,7 +294,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="rounded-card border border-border bg-white shadow-soft p-5">
+          <div className="rounded-card border border-border bg-white shadow-soft p-5 flex flex-col">
             <h3 className="text-[14px] font-semibold text-ink-900 mb-4">Top Categories</h3>
             {donutSegments.length > 0 ? (
               <CategoryDonut segments={donutSegments} />
@@ -400,28 +381,48 @@ export default function DashboardPage() {
               <p className="px-5 py-6 text-[13px] text-ink-400">No activity yet — actions across the admin panel will show up here.</p>
             )}
             {activity && activity.length > 0 && (
-              <div className="divide-y divide-border">
-                {activity.map((a) => {
-                  const meta = ACTIVITY_ICON_MAP[a.type] || { icon: Pencil, color: "#2563eb" };
-                  const Icon = meta.icon;
-                  return (
-                    <div key={a._id} className="px-5 py-3.5 flex items-start gap-3">
-                      <div
-                        className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ background: `${meta.color}1a`, color: meta.color }}
-                      >
-                        <Icon size={13} />
+              <>
+                <div
+                  className="divide-y divide-border overflow-hidden transition-[max-height] duration-300 ease-in-out"
+                  style={{ maxHeight: showAllActivity ? activity.length * 100 : 300 }}
+                >
+                  {(showAllActivity ? activity : activity.slice(0, 3)).map((a) => {
+                    const meta = ACTIVITY_ICON_MAP[a.type] || { icon: Pencil, color: "#2563eb" };
+                    const Icon = meta.icon;
+                    return (
+                      <div key={a._id} className="px-5 py-3.5 flex items-start gap-3">
+                        <div
+                          className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: `${meta.color}1a`, color: meta.color }}
+                        >
+                          <Icon size={13} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[13px] text-ink-700 leading-snug">
+                            <span className="font-semibold text-ink-900">{a.actorName}</span> {a.message}
+                          </p>
+                          <span className="text-[11.5px] text-ink-400">{timeAgo(a.createdAt)}</span>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[13px] text-ink-700 leading-snug">
-                          <span className="font-semibold text-ink-900">{a.actorName}</span> {a.message}
-                        </p>
-                        <span className="text-[11.5px] text-ink-400">{timeAgo(a.createdAt)}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+                {activity.length > 3 && (
+                  <div className="px-5 py-3 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllActivity((v) => !v)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-primary hover:underline"
+                    >
+                      {showAllActivity ? (
+                        <>Show Less ↑</>
+                      ) : (
+                        <>View More ↓</>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
