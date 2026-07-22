@@ -125,7 +125,23 @@ function StickyEditorialSettings({ data, setPath }) {
         <SidebarWidgetToggle label="Newsletter box" enabled={data.sidebar?.newsletter?.enabled} onToggle={(v) => setPath(["sidebar", "newsletter", "enabled"], v)}>
           <TextField label="Heading" value={data.sidebar?.newsletter?.heading} onChange={(v) => setPath(["sidebar", "newsletter", "heading"], v)} />
           <TextField label="Subheading" value={data.sidebar?.newsletter?.subheading} onChange={(v) => setPath(["sidebar", "newsletter", "subheading"], v)} />
-          <TextField label="Button label" value={data.sidebar?.newsletter?.ctaLabel} onChange={(v) => setPath(["sidebar", "newsletter", "ctaLabel"], v)} />
+          <div className="grid grid-cols-2 gap-2">
+            <TextField label="Email input placeholder" value={data.sidebar?.newsletter?.placeholder} onChange={(v) => setPath(["sidebar", "newsletter", "placeholder"], v)} placeholder="Your email address" />
+            <TextField label="Button label" value={data.sidebar?.newsletter?.ctaLabel} onChange={(v) => setPath(["sidebar", "newsletter", "ctaLabel"], v)} />
+          </div>
+          <TextField
+            label="Success message"
+            value={data.sidebar?.newsletter?.successMessage}
+            onChange={(v) => setPath(["sidebar", "newsletter", "successMessage"], v)}
+            placeholder="You're subscribed! Please check your inbox."
+          />
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border mt-1">
+            <ColorField label="Box background" value={data.sidebar?.newsletter?.bgColor || "#111111"} onChange={(v) => setPath(["sidebar", "newsletter", "bgColor"], v)} />
+            <ColorField label="Heading color" value={data.sidebar?.newsletter?.headingColor || "#FAFAF8"} onChange={(v) => setPath(["sidebar", "newsletter", "headingColor"], v)} />
+            <ColorField label="Subheading text color" value={data.sidebar?.newsletter?.subheadingColor || "#888888"} onChange={(v) => setPath(["sidebar", "newsletter", "subheadingColor"], v)} />
+            <ColorField label="Button color" value={data.sidebar?.newsletter?.buttonColor || "#8B1A1A"} onChange={(v) => setPath(["sidebar", "newsletter", "buttonColor"], v)} />
+            <ColorField label="Button text color" value={data.sidebar?.newsletter?.buttonTextColor || "#ffffff"} onChange={(v) => setPath(["sidebar", "newsletter", "buttonTextColor"], v)} />
+          </div>
         </SidebarWidgetToggle>
         <SidebarWidgetToggle label="Topic tags" enabled={data.sidebar?.topics?.enabled} onToggle={(v) => setPath(["sidebar", "topics", "enabled"], v)}>
           <TextField label="Title" value={data.sidebar?.topics?.title} onChange={(v) => setPath(["sidebar", "topics", "title"], v)} />
@@ -305,6 +321,29 @@ function NumberField({ label, value, onChange, min = 0, max = 9999 }) {
   );
 }
 
+function ColorField({ label, value, onChange }) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value || "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-9 shrink-0 rounded-md border border-border cursor-pointer p-0.5 bg-white"
+        />
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="#000000"
+          className="w-full rounded-lg border border-border bg-surface-soft px-3 py-2 text-[12.5px] text-ink-900 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        />
+      </div>
+    </div>
+  );
+}
+
 function SelectField({ label, value, onChange, options }) {
   return (
     <div>
@@ -370,3 +409,4 @@ function Accordion({ label, children }) {
     </div>
   );
 }
+
