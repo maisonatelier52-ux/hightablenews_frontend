@@ -780,9 +780,6 @@ function NewspaperEditorialSettings({ data, set }) {
 
   return (
     <>
-      <Accordion label="Real Articles">
-        <ArticleListField data={data} set={set} idsKey="articleIds" label="Template articles" />
-      </Accordion>
       <Accordion label="Top Stories Grid">
         <ToggleField label="Show Top Stories" value={data.showTopStories !== false} onChange={v => set({ showTopStories: v })} />
         {data.showTopStories !== false && (
@@ -852,6 +849,11 @@ function NewspaperEditorialSettings({ data, set }) {
       </Accordion>
 
       <Accordion label="Center Column — Hero">
+        <ArticleModeField data={data} set={set} idKey="heroArticleId" label="Hero article" />
+        <p className="text-[11px] text-ink-400">
+          On "Latest article", the newest article marked as <strong>Client News</strong> always leads this hero slot automatically. If there's no Client News article yet, the newest published article is used instead. Choose "Choose article" to pin a specific story here.
+        </p>
+        <SectionDivider label="Fallback content (only used when no real articles are published yet)" />
         <TextField label="Category + Date line" value={data.heroCategory} onChange={v => set({ heroCategory: v })} placeholder="WORLD • POLITICS" />
         <TextField label="Hero headline" value={data.heroHeadline} onChange={v => set({ heroHeadline: v })} />
         <TextField label="Summary" value={data.heroSummary} onChange={v => set({ heroSummary: v })} />
@@ -1194,9 +1196,6 @@ function ModernMagazineSettings({ data, set }) {
 
   return (
     <>
-      <Accordion label="Real Articles">
-        <ArticleListField data={data} set={set} idsKey="articleIds" label="Template articles" />
-      </Accordion>
       <Accordion label="Hero Section">
         <ToggleField label="Show Hero" value={data.heroEnabled !== false} onChange={(v) => set({ heroEnabled: v })} />
         {data.heroEnabled !== false && (
@@ -1374,9 +1373,6 @@ function DarkNewsSettings({ data, set }) {
 
   return (
     <>
-      <Accordion label="Real Articles">
-        <ArticleListField data={data} set={set} idsKey="articleIds" label="Template articles" />
-      </Accordion>
       <Accordion label="Dark Theme Colors">
         <ColorField label="Page background" value={data.bg} onChange={(v) => set({ bg: v })} />
         <ColorField label="Card background" value={data.cardBg} onChange={(v) => set({ cardBg: v })} />
@@ -1574,9 +1570,6 @@ function MasonryEditorialSettings({ data, set }) {
 
   return (
     <>
-      <Accordion label="Real Articles">
-        <ArticleListField data={data} set={set} idsKey="articleIds" label="Template articles" />
-      </Accordion>
       <Accordion label="Hero Masonry">
         <SelectField label="Hero source" value={data.heroSource} onChange={(v) => set({ heroSource: v })} options={["manual", "latest", "category", "tag"]} />
         <TextField label="Category label" value={data.heroCategory} onChange={(v) => set({ heroCategory: v })} />
