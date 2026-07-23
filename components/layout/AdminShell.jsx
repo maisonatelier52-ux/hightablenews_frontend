@@ -192,7 +192,7 @@ export default function AdminShell({ title, children }) {
     <div className="min-h-screen bg-surface-soft flex">
       {/* Sidebar — desktop */}
       <aside
-        className={`hidden lg:flex lg:flex-col shrink-0 border-r border-border bg-white transition-[width] duration-200 ${
+        className={`hidden lg:flex lg:flex-col shrink-0 sticky top-0 h-screen overflow-hidden border-r border-border bg-white transition-[width] duration-200 ${
           collapsed ? "w-[76px]" : "w-64"
         }`}
       >
@@ -219,7 +219,7 @@ export default function AdminShell({ title, children }) {
           )}
         </div>
         <NavLinks sections={sections} pathname={pathname} collapsed={collapsed} />
-        <div className={`px-3 pb-3 flex ${collapsed ? "justify-center" : ""}`}>
+        {/* <div className={`px-3 pb-3 flex ${collapsed ? "justify-center" : ""}`}>
           <a
             href={SITE_URL}
             target="_blank"
@@ -232,7 +232,7 @@ export default function AdminShell({ title, children }) {
             <ArrowUpRight size={14} />
             {!collapsed && "View live site"}
           </a>
-        </div>
+        </div> */}
         <div className="border-t border-border p-3 space-y-1">
           <button
             onClick={toggleCollapsed}
