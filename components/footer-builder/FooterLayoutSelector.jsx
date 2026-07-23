@@ -9,9 +9,48 @@ const LAYOUTS = [
   { value: "2-column", label: "2 Columns", cols: 2, desc: "Two wide columns for fewer links." },
   { value: "minimal", label: "Minimal", cols: 0, desc: "Single row: logo left, links right." },
   { value: "centered", label: "Centered", cols: 0, desc: "Everything stacked and centered." },
+  {
+    value: "masthead-left",
+    label: "Masthead (Brand Left)",
+    cols: 0,
+    masthead: "left",
+    desc: "NYT/WSJ style: wide brand column with tagline, socials, and locations beside the nav columns.",
+  },
+  {
+    value: "masthead-right",
+    label: "Masthead (Brand Right)",
+    cols: 0,
+    masthead: "right",
+    desc: "Same masthead layout, mirrored — nav columns first, brand column on the right.",
+  },
 ];
 
 function MiniPreview({ layout }) {
+  if (layout.masthead) {
+    const brand = (
+      <div key="brand" className="w-5 space-y-1">
+        <div className="h-1.5 w-full rounded-full bg-white/70" />
+        <div className="h-1 w-full rounded-full bg-white/30" />
+        <div className="flex gap-0.5 mt-1">
+          <div className="h-1.5 w-1.5 rounded-full border border-white/40" />
+          <div className="h-1.5 w-1.5 rounded-full border border-white/40" />
+          <div className="h-1.5 w-1.5 rounded-full border border-white/40" />
+        </div>
+      </div>
+    );
+    const navCols = Array.from({ length: 3 }).map((_, i) => (
+      <div key={i} className="flex-1 space-y-1">
+        <div className="h-1 w-full rounded-full bg-white/50" />
+        <div className="h-1 w-3/4 rounded-full bg-white/25" />
+        <div className="h-1 w-3/4 rounded-full bg-white/25" />
+      </div>
+    ));
+    return (
+      <div className="h-12 rounded-md bg-ink-900 flex items-center gap-2 px-2.5">
+        {layout.masthead === "left" ? [brand, ...navCols] : [...navCols, brand]}
+      </div>
+    );
+  }
   if (layout.cols > 0) {
     return (
       <div className="h-12 rounded-md bg-ink-900 flex items-center justify-center gap-2 px-2.5">

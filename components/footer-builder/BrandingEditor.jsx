@@ -85,6 +85,14 @@ export default function BrandingEditor({ branding, onChange }) {
         <Input value={branding.tagline} onChange={(e) => set({ tagline: e.target.value })} />
       </Field>
 
+      <Field label="Meta Line" hint="Shown under the tagline on the Masthead templates, e.g. established date and office locations.">
+        <Input
+          value={branding.meta || ""}
+          onChange={(e) => set({ meta: e.target.value })}
+          placeholder="Est. 1998 · London · New York · Singapore"
+        />
+      </Field>
+
       {(branding.type || "text") === "text" ? (
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Logo Font Family">

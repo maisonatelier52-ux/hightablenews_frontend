@@ -143,6 +143,96 @@ function LogoMark({ branding, bottomBar, theme }) {
   );
 }
 
+/** Circular bordered social icons used by the Masthead templates (matches the
+ *  reference design: w-9 h-9 rounded-full border, hover:border-white). */
+function SocialRow({ social, theme, mobile }) {
+  if (!social || social.length === 0) return null;
+  return (
+    <div className={`flex gap-3 mt-5 ${mobile ? "justify-center" : ""}`}>
+      {social.map((s) => {
+        const Icon = SOCIAL_ICONS[s.platform] || Globe;
+        const hasLink = s.url && s.url !== "#";
+        return (
+          <a
+            key={s.id}
+            href={s.url || "#"}
+            target={hasLink ? "_blank" : undefined}
+            rel={hasLink ? "noopener noreferrer" : undefined}
+            aria-label={s.platform}
+            title={s.platform}
+            className="flex items-center justify-center rounded-full border transition-colors duration-300"
+            style={{ width: 36, height: 36, borderColor: theme.border, color: theme.link }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = theme.hover;
+              e.currentTarget.style.color = theme.hover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = theme.border;
+              e.currentTarget.style.color = theme.link;
+            }}
+          >
+            <Icon size={15} />
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Brand column for the Masthead templates: logo, italic tagline, meta line
+ *  (est. date / office locations), and the social icon row — all left-aligned
+ *  rather than centered, matching a classic NYT/WSJ-style masthead footer. */
+function MastheadBrand({ branding, theme, taglineColor, social, mobile }) {
+  return (
+    <div className={mobile ? "text-center" : ""}>
+      {(branding.type || "text") === "image" && branding.image ? (
+        <img
+          src={branding.image}
+          alt={branding.text || "Logo"}
+          style={{
+            height: mobile ? Math.max(22, Math.round(branding.size * 0.45)) : Math.round(branding.size * 0.55),
+            objectFit: "contain",
+          }}
+          className={mobile ? "mx-auto" : ""}
+        />
+      ) : (
+        <div
+          className="font-bold leading-none"
+          style={{
+            fontFamily: LOGO_FONT_STACKS[branding.font] || LOGO_FONT_STACKS.blackletter,
+            fontSize: mobile ? Math.max(22, Math.round(branding.size * 0.4)) : Math.round(branding.size * 0.5),
+            color: branding.color || theme.text,
+          }}
+        >
+          {branding.text}
+        </div>
+      )}
+      {branding.tagline && (
+        <p
+          className="italic mt-2.5"
+          style={{
+            fontFamily: TAGLINE_FONT_STACKS[branding.taglineFont] || TAGLINE_FONT_STACKS.cormorant,
+            color: taglineColor,
+            fontSize: mobile ? 13 : 14,
+            maxWidth: 320,
+          }}
+        >
+          "{branding.tagline}"
+        </p>
+      )}
+      {branding.meta && (
+        <p
+          className="uppercase mt-3"
+          style={{ color: theme.link, fontSize: 11, letterSpacing: "1.5px" }}
+        >
+          {branding.meta}
+        </p>
+      )}
+      <SocialRow social={social} theme={theme} mobile={mobile} />
+    </div>
+  );
+}
+
 export default function FooterPreview({ footer, device = "desktop" }) {
   const mobile = device === "mobile";
   const { theme, branding, columns, newsletter, social, bottomBar, depth, layout } = footer;
@@ -151,6 +241,8 @@ export default function FooterPreview({ footer, device = "desktop" }) {
   const accentLine = theme.accentLine || "#5c1111";
   const taglineColor = theme.taglineColor || theme.link;
   const isCenteredLayout = layout === "centered" || layout === "minimal" || columns.length === 0;
+  const isMasthead = layout === "masthead-left" || layout === "masthead-right";
+  const brandFirst = layout !== "masthead-right";
 
   const copyrightText = bottomBar.autoYear
     ? bottomBar.copyright.replace(/©\s*\d{4}/, `© ${new Date().getFullYear()}`)
@@ -180,82 +272,116 @@ export default function FooterPreview({ footer, device = "desktop" }) {
             : `${depth.paddingTop}px 70px ${depth.paddingBottom * 0.5}px`,
         }}
       >
-        {/* Logo + Tagline, centered */}
-        <div className="flex flex-col items-center text-center">
-          {(branding.type || "text") === "image" && branding.image ? (
-            <img
-              src={branding.image}
-              alt={branding.text || "Logo"}
-              style={{ height: mobile ? Math.max(24, Math.round(branding.size * 0.5)) : branding.size, objectFit: "contain" }}
-            />
-          ) : (
-            <div
-              className="font-bold tracking-tight leading-none"
-              style={{
-                fontFamily: LOGO_FONT_STACKS[branding.font] || LOGO_FONT_STACKS.blackletter,
-                fontSize: mobile ? Math.max(28, Math.round(branding.size * 0.55)) : branding.size,
-                color: branding.color || theme.text,
-              }}
-            >
-              {branding.text}
-            </div>
-          )}
-          {branding.tagline && (
-            <p
-              className="mt-3 italic"
-              style={{
-                fontFamily: TAGLINE_FONT_STACKS[branding.taglineFont] || TAGLINE_FONT_STACKS.cormorant,
-                color: taglineColor,
-                fontSize: mobile ? 14 : 18,
-                maxWidth: 480,
-              }}
-            >
-              "{branding.tagline}"
-            </p>
-          )}
-        </div>
+        {isMasthead ? (
+          /* Masthead layout: wide brand column (logo, tagline, meta line,
+             socials) sits directly beside the nav columns in one row —
+             brand on the left for "masthead-left", on the right (mirrored)
+             for "masthead-right". Column count/content stays fully admin
+             controlled via the Columns tab. */
+          <div
+            className={mobile ? "flex flex-col gap-8" : "grid"}
+            style={
+              mobile
+                ? undefined
+                : { gridTemplateColumns: `1.5fr repeat(${Math.max(columns.length, 1)}, 1fr)`, gap: `${depth.columnGap}px` }
+            }
+          >
+            {brandFirst && <MastheadBrand branding={branding} theme={theme} taglineColor={taglineColor} social={social} mobile={mobile} />}
 
-        {/* Divider below logo */}
-        {(columns.length > 0 || newsletter.enabled) && (
-          <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: mobile ? 28 : 45 }} />
-        )}
+            {columns.map((col) => (
+              <div key={col.id} className={mobile ? "text-center" : ""}>
+                <p
+                  className="font-bold uppercase mb-4"
+                  style={{ color: theme.text, fontSize: mobile ? 11 : 12, letterSpacing: "2.5px" }}
+                >
+                  {col.title || "Untitled"}
+                </p>
+                <ColumnLinks col={col} theme={theme} fontSize={mobile ? mobileSettings.fontSize : undefined} />
+              </div>
+            ))}
 
-        {/* Columns */}
-        {layout !== "minimal" && columns.length > 0 && (
+            {!brandFirst && <MastheadBrand branding={branding} theme={theme} taglineColor={taglineColor} social={social} mobile={mobile} />}
+          </div>
+        ) : (
           <>
-            {mobile ? (
-              <div className="mt-1">
-                {mobileSettings.layout === "accordion" ? (
-                  columns.map((col) => (
-                    <AccordionColumn key={col.id} col={col} theme={theme} mobile={mobileSettings} defaultOpen={mobileSettings.defaultExpanded} />
-                  ))
+            {/* Logo + Tagline, centered */}
+            <div className="flex flex-col items-center text-center">
+              {(branding.type || "text") === "image" && branding.image ? (
+                <img
+                  src={branding.image}
+                  alt={branding.text || "Logo"}
+                  style={{ height: mobile ? Math.max(24, Math.round(branding.size * 0.5)) : branding.size, objectFit: "contain" }}
+                />
+              ) : (
+                <div
+                  className="font-bold tracking-tight leading-none"
+                  style={{
+                    fontFamily: LOGO_FONT_STACKS[branding.font] || LOGO_FONT_STACKS.blackletter,
+                    fontSize: mobile ? Math.max(28, Math.round(branding.size * 0.55)) : branding.size,
+                    color: branding.color || theme.text,
+                  }}
+                >
+                  {branding.text}
+                </div>
+              )}
+              {branding.tagline && (
+                <p
+                  className="mt-3 italic"
+                  style={{
+                    fontFamily: TAGLINE_FONT_STACKS[branding.taglineFont] || TAGLINE_FONT_STACKS.cormorant,
+                    color: taglineColor,
+                    fontSize: mobile ? 14 : 18,
+                    maxWidth: 480,
+                  }}
+                >
+                  "{branding.tagline}"
+                </p>
+              )}
+            </div>
+
+            {/* Divider below logo */}
+            {(columns.length > 0 || newsletter.enabled) && (
+              <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: mobile ? 28 : 45 }} />
+            )}
+
+            {/* Columns */}
+            {layout !== "minimal" && columns.length > 0 && (
+              <>
+                {mobile ? (
+                  <div className="mt-1">
+                    {mobileSettings.layout === "accordion" ? (
+                      columns.map((col) => (
+                        <AccordionColumn key={col.id} col={col} theme={theme} mobile={mobileSettings} defaultOpen={mobileSettings.defaultExpanded} />
+                      ))
+                    ) : (
+                      <div className="space-y-6 pt-6">
+                        {columns.map((col) => (
+                          <div key={col.id} className={mobileSettings.showBorders ? "pb-5 border-b" : "pb-1"} style={{ borderColor: theme.border }}>
+                            <p className="text-[11px] font-bold uppercase mb-3" style={{ color: theme.text, letterSpacing: "3px" }}>
+                              {col.title || "Untitled"}
+                            </p>
+                            <ColumnLinks col={col} theme={theme} fontSize={mobileSettings.fontSize} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="space-y-6 pt-6">
+                  <div
+                    className={`grid ${isCenteredLayout ? "grid-cols-1 sm:grid-cols-3 justify-center text-center" : getGridCols(layout)}`}
+                    style={{ gap: `${depth.columnGap}px`, paddingTop: 45 }}
+                  >
                     {columns.map((col) => (
-                      <div key={col.id} className={mobileSettings.showBorders ? "pb-5 border-b" : "pb-1"} style={{ borderColor: theme.border }}>
-                        <p className="text-[11px] font-bold uppercase mb-3" style={{ color: theme.text, letterSpacing: "3px" }}>
+                      <div key={col.id}>
+                        <p className="font-bold uppercase mb-4" style={{ color: theme.text, fontSize: 13, letterSpacing: "3px" }}>
                           {col.title || "Untitled"}
                         </p>
-                        <ColumnLinks col={col} theme={theme} fontSize={mobileSettings.fontSize} />
+                        <ColumnLinks col={col} theme={theme} />
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-            ) : (
-              <div
-                className={`grid ${isCenteredLayout ? "grid-cols-1 sm:grid-cols-3 justify-center text-center" : getGridCols(layout)}`}
-                style={{ gap: `${depth.columnGap}px`, paddingTop: 45 }}
-              >
-                {columns.map((col) => (
-                  <div key={col.id}>
-                    <p className="font-bold uppercase mb-4" style={{ color: theme.text, fontSize: 13, letterSpacing: "3px" }}>
-                      {col.title || "Untitled"}
-                    </p>
-                    <ColumnLinks col={col} theme={theme} />
-                  </div>
-                ))}
-              </div>
+              </>
             )}
           </>
         )}
