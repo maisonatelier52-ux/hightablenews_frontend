@@ -1,11 +1,11 @@
+// components/homepage-builder/HomepageBuilder.jsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import {
   DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
-import { Save, Check, Loader2, Undo2, Redo2, X, LayoutTemplate, Layers } from "lucide-react";
+import { Save, Check, Loader2, Undo2, Redo2, X, LayoutTemplate, Layers, Sparkles } from "lucide-react";
 
 import { getHomepageAdmin as getHomepage, saveHomepage } from "@/lib/api";
 import { createBlock, BLOCK_DEFINITIONS, CENTER_SECTION_COLOR_PALETTE, makeCenterSectionForCategory } from "@/lib/blockDefinitions";
@@ -161,29 +161,15 @@ export default function HomepageBuilder() {
     });
   }
 
-  function addBlock(type, atIndex = null) {
+  // The homepage only ever holds a single block (one of the four full-page
+  // templates below). Adding a block — whether via the library drag/drop or
+  // any other entry point — always replaces whatever is currently on the
+  // page rather than appending to it, so there's no way to end up with more
+  // than one block stacked on the homepage.
+  function addBlock(type) {
     const block = createBlock(type);
-    const blocks = [...homepage.blocks];
-    if (atIndex === null || atIndex >= blocks.length) blocks.push(block);
-    else blocks.splice(atIndex, 0, block);
-    commitBlocks(blocks);
+    commitBlocks([block]);
     setSelectedId(block.id);
-  }
-
-  function deleteBlock(id) {
-    commitBlocks(homepage.blocks.filter((b) => b.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  }
-
-  function duplicateBlock(id) {
-    const index = homepage.blocks.findIndex((b) => b.id === id);
-    if (index === -1) return;
-    const original = homepage.blocks[index];
-    const copy = { ...createBlock(original.type), data: { ...original.data } };
-    const blocks = [...homepage.blocks];
-    blocks.splice(index + 1, 0, copy);
-    commitBlocks(blocks);
-    setSelectedId(copy.id);
   }
 
   function applyTemplate(template) {
@@ -208,7 +194,9 @@ export default function HomepageBuilder() {
       });
     }
 
-    commitBlocks(blocks);
+    // Only one block on the homepage at a time — applying a template always
+    // replaces the current block(s) with just this template's single block.
+    commitBlocks(blocks.slice(0, 1));
     setSelectedId(blocks[0]?.id ?? null);
     setTemplateOpen(false);
   }
@@ -224,33 +212,20 @@ export default function HomepageBuilder() {
     if (isLibraryItem) {
       const type = active.data.current?.type;
       if (!type) return;
-      const overId = over.id;
-      if (overId === "page-structure-droppable") addBlock(type);
-      else {
-        const overIndex = homepage.blocks.findIndex((b) => b.id === overId);
-        addBlock(type, overIndex === -1 ? null : overIndex);
-      }
+      addBlock(type);
       return;
     }
 
-    if (active.id === over.id) return;
-    const ids = homepage.blocks.map((b) => b.id);
-    const oldIndex = ids.indexOf(active.id);
-    const newIndex = ids.indexOf(over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    commitBlocks(arrayMove(homepage.blocks, oldIndex, newIndex));
+    // With only ever one block present, there's nothing left to reorder.
   }
 
   if (loading || !homepage) {
     return (
-      <div className="p-6 space-y-5">
-        <Skeleton className="h-14 w-full" />
-        <div className="grid grid-cols-3 gap-5">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-        <Skeleton className="h-96 w-full" />
+      <div className="p-4 lg:p-6 max-w-[1400px] mx-auto space-y-6">
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-72 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }
@@ -259,21 +234,39 @@ export default function HomepageBuilder() {
   const activeLibType = activeDragId && String(activeDragId).startsWith("lib-") ? activeDragId.replace("lib-", "") : null;
   const activeBlock = activeDragId ? homepage.blocks.find((b) => b.id === activeDragId) : null;
 
+  // Purely derived (never stored): tells the template strip which card, if
+  // any, matches the page's current single mega-block exactly, so the
+  // "active" checkmark always reflects reality — including right after a
+  // fresh page load — instead of drifting out of sync with a separate
+  // piece of local state.
+  const activeTemplateId =
+    homepage.blocks.length === 1
+      ? TEMPLATES.find((t) => t.blocks[0]?.type === homepage.blocks[0].type)?.id ?? null
+      : null;
+
   return (
-    <div className="p-4 lg:p-6 max-w-[1500px] mx-auto">
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-        <div>
-          <h2 className="text-lg font-bold text-ink-900">Homepage Builder</h2>
-          <p className="text-[13px] text-ink-500 mt-0.5">Pick a template to design your homepage layout — no code required.</p>
+    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+      {/* ── Header ───────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-glow shrink-0">
+            <LayoutTemplate size={18} />
+          </div>
+          <div>
+            <h2 className="text-[17px] font-bold text-ink-900 leading-tight">Homepage Builder</h2>
+            <p className="text-[12.5px] text-ink-500 mt-0.5">Pick a template to design your homepage layout — no code required.</p>
+          </div>
         </div>
+
         <div className="flex items-center gap-2 flex-wrap">
           <SaveStatus status={status} />
-          <IconButton icon={Undo2} onClick={undo} disabled={history.length === 0} title="Undo (Ctrl+Z)" />
-          <IconButton icon={Redo2} onClick={redo} disabled={future.length === 0} title="Redo (Ctrl+Y)" />
+          <div className="flex items-center rounded-lg border border-border overflow-hidden divide-x divide-border">
+            <IconButton icon={Undo2} onClick={undo} disabled={history.length === 0} title="Undo (Ctrl+Z)" bare />
+            <IconButton icon={Redo2} onClick={redo} disabled={future.length === 0} title="Redo (Ctrl+Y)" bare />
+          </div>
           <button
             onClick={() => setTemplateOpen(true)}
-            className="h-9 flex items-center gap-1.5 px-3 rounded-lg border border-border text-ink-600 hover:bg-surface-soft text-[13px] font-medium transition-colors"
+            className="h-9 flex items-center gap-1.5 px-3 rounded-lg border border-border text-ink-600 hover:bg-surface-soft hover:border-ink-200 text-[13px] font-medium transition-colors"
           >
             <LayoutTemplate size={14} />
             Templates
@@ -284,51 +277,57 @@ export default function HomepageBuilder() {
         </div>
       </div>
 
-      {/* Block count summary */}
-      <div className="flex items-center gap-2 mb-4 px-1">
-        <Layers size={13} className="text-ink-400" />
-        <span className="text-[12px] text-ink-400">
-          {homepage.blocks.length} block{homepage.blocks.length !== 1 ? "s" : ""} on this page
-        </span>
-        {homepage.blocks.length > 0 && (
-          <>
-            <span className="text-ink-200">·</span>
-            <span className="text-[12px] text-ink-400">
-              {homepage.blocks.map((b) => BLOCK_DEFINITIONS[b.type]?.label || b.type).join(", ")}
-            </span>
-          </>
-        )}
-      </div>
-
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        {/* ── Row 1: Templates + Page Structure side by side ── */}
-        <div className="grid lg:grid-cols-[260px_1fr] gap-5 items-start mb-6">
-          {/* Templates */}
-          <div className="lg:sticky lg:top-[88px]">
-            <PanelHeader title="Templates" />
-            <TemplateSidebarPanel templates={TEMPLATES} onApply={applyTemplate} />
+        {/* ── Layout templates ──────────────────────────────────────── */}
+        <SectionCard
+          title="Select Homepage Template"
+          subtitle="Choose a starting layout — every section stays fully customizable afterward."
+          right={
+            <button
+              onClick={() => setTemplateOpen(true)}
+              className="text-[12px] font-semibold text-primary hover:text-primary-600 hover:underline shrink-0"
+            >
+              View all
+            </button>
+          }
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {TEMPLATES.map((t) => (
+              <TemplateCard key={t.id} template={t} active={activeTemplateId === t.id} onApply={applyTemplate} />
+            ))}
           </div>
+        </SectionCard>
 
-          {/* Page Structure */}
-          <div>
-            <PanelHeader title="Page structure" />
-            <PageStructurePanel
-              blocks={homepage.blocks}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onDuplicate={duplicateBlock}
-              onDelete={deleteBlock}
-            />
-          </div>
-        </div>
+        {/* ── Page structure / homepage sections ───────────────────── */}
+        {/* <SectionCard
+          title="Homepage Sections"
+          subtitle={
+            homepage.blocks.length > 0
+              ? homepage.blocks.map((b) => BLOCK_DEFINITIONS[b.type]?.label || b.type).join(" · ")
+              : "Apply a template above to start building your homepage."
+          }
+          right={
+            <span className="flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full bg-surface-soft border border-border text-[11px] font-semibold text-ink-500">
+              <Layers size={11} />
+              {homepage.blocks.length} block{homepage.blocks.length !== 1 ? "s" : ""}
+            </span>
+          }
+          bodyClassName="p-3"
+        >
+          <PageStructurePanel
+            blocks={homepage.blocks}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        </SectionCard> */}
 
-        {/* ── Row 2: Block Settings, full width, no inner scroll ── */}
+        {/* ── Block settings ────────────────────────────────────────── */}
         <div className="mb-6">
           <PanelHeader title="Block settings" />
           <BlockSettingsPanel block={selectedBlock} onUpdate={updateBlockData} fullWidth />
         </div>
 
-        {/* ── Row 3: Live Preview (always visible, full width) ── */}
+        {/* ── Live preview ──────────────────────────────────────────── */}
         <div>
           <PanelHeader title="Preview" />
           <div className="rounded-xl border border-border bg-white shadow-soft overflow-hidden">
@@ -349,16 +348,36 @@ export default function HomepageBuilder() {
             </div>
           )}
           {activeBlock && (
-            <SortableBlockItem block={activeBlock} selected onSelect={() => {}} onDuplicate={() => {}} onDelete={() => {}} />
+            <SortableBlockItem block={activeBlock} selected onSelect={() => {}} />
           )}
         </DragOverlay>
       </DndContext>
 
       {/* Template Library Modal */}
       {templateOpen && (
-        <TemplateModal templates={TEMPLATES} onApply={applyTemplate} onClose={() => setTemplateOpen(false)} />
+        <TemplateModal templates={TEMPLATES} activeTemplateId={activeTemplateId} onApply={applyTemplate} onClose={() => setTemplateOpen(false)} />
       )}
     </div>
+  );
+}
+
+// ─── Shared building blocks ──────────────────────────────────────────────────
+
+/** Consistent white "card" wrapper used for every major section of the page
+ *  (templates strip, homepage sections list, etc.) so the whole builder
+ *  reads as one coherent design system instead of a stack of ad-hoc panels. */
+function SectionCard({ title, subtitle, right, children, bodyClassName = "p-5" }) {
+  return (
+    <section className="mb-6 rounded-2xl border border-border bg-white shadow-soft overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border bg-gray-50/50">
+        <div className="min-w-0">
+          <h3 className="text-[13.5px] font-bold text-ink-900">{title}</h3>
+          {subtitle && <p className="text-[11.5px] text-ink-500 mt-0.5 truncate">{subtitle}</p>}
+        </div>
+        {right}
+      </div>
+      <div className={bodyClassName}>{children}</div>
+    </section>
   );
 }
 
@@ -366,13 +385,15 @@ function PanelHeader({ title }) {
   return <h3 className="text-[12.5px] font-semibold text-ink-500 uppercase tracking-wide mb-2.5 px-0.5">{title}</h3>;
 }
 
-function IconButton({ icon: Icon, onClick, disabled, title }) {
+function IconButton({ icon: Icon, onClick, disabled, title, bare = false }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-ink-500 hover:bg-surface-soft hover:text-ink-900 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+      className={`h-9 w-9 flex items-center justify-center text-ink-500 hover:bg-surface-soft hover:text-ink-900 disabled:opacity-30 disabled:hover:bg-transparent transition-colors ${
+        bare ? "" : "rounded-lg border border-border"
+      }`}
     >
       <Icon size={16} />
     </button>
@@ -411,92 +432,150 @@ const BADGE_COLOR_CLASSES = {
   rose: "bg-rose-600",
 };
 
-const CARD_BORDER_CLASSES = {
-  amber: "border-amber-300 bg-amber-50/40",
-  blue: "border-primary-200 bg-primary-50/30",
-  slate: "border-slate-300 bg-slate-50/50",
-  rose: "border-rose-200 bg-rose-50/30",
+const THUMB_TINT = {
+  amber: { strong: "bg-amber-300", soft: "bg-amber-100" },
+  blue: { strong: "bg-primary-200", soft: "bg-primary-100" },
+  slate: { strong: "bg-slate-500", soft: "bg-slate-300" },
+  rose: { strong: "bg-rose-200", soft: "bg-rose-100" },
 };
 
-function TemplateSidebarPanel({ templates, onApply }) {
+/** Small, purely-decorative wireframe mockup that hints at each template's
+ *  actual structure (columns, hero, grid, masonry) so the picker feels like
+ *  a real layout gallery rather than an icon + label list. */
+function TemplateThumbnail({ templateId, accent }) {
+  const tint = THUMB_TINT[accent] || { strong: "bg-ink-200", soft: "bg-ink-100" };
+
+  if (templateId === "newspaper-editorial") {
+    return (
+      <div className="h-24 w-full rounded-lg border border-border bg-white p-2 flex flex-col gap-1.5">
+        <div className="h-1.5 w-2/5 rounded-full bg-ink-800" />
+        <div className="flex-1 flex gap-1.5">
+          <div className="w-1/4 flex flex-col justify-between gap-1">
+            <div className="h-1.5 rounded-full bg-ink-200" />
+            <div className="h-1.5 rounded-full bg-ink-200" />
+            <div className="h-1.5 w-2/3 rounded-full bg-ink-200" />
+          </div>
+          <div className={`w-1/2 rounded-md ${tint.strong} flex items-end p-1`}>
+            <div className="h-1.5 w-3/4 rounded-full bg-white/70" />
+          </div>
+          <div className="w-1/4 flex flex-col justify-between gap-1">
+            <div className="h-1.5 rounded-full bg-ink-200" />
+            <div className="h-1.5 w-2/3 rounded-full bg-ink-200" />
+            <div className="h-1.5 rounded-full bg-ink-200" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (templateId === "modern-magazine") {
+    return (
+      <div className="h-24 w-full rounded-lg border border-border bg-white p-2 flex flex-col gap-1.5">
+        <div className="flex-1 flex gap-1.5">
+          <div className={`w-3/5 rounded-md ${tint.strong}`} />
+          <div className="w-2/5 flex flex-col gap-1.5">
+            <div className={`flex-1 rounded-md ${tint.soft}`} />
+            <div className={`flex-1 rounded-md ${tint.soft}`} />
+          </div>
+        </div>
+        <div className="flex gap-1.5 h-6 shrink-0">
+          <div className="flex-1 rounded-md bg-ink-100" />
+          <div className="flex-1 rounded-md bg-ink-100" />
+          <div className="flex-1 rounded-md bg-ink-100" />
+        </div>
+      </div>
+    );
+  }
+
+  if (templateId === "dark-news") {
+    return (
+      <div className="h-24 w-full rounded-lg border border-slate-700 bg-slate-900 p-2 flex flex-col gap-1.5">
+        <div className="flex-1 rounded-md bg-slate-700/70 relative overflow-hidden">
+          <div className="absolute bottom-1.5 left-1.5 h-1.5 w-1/2 rounded-full bg-slate-300/70" />
+        </div>
+        <div className="flex gap-1.5 h-6 shrink-0">
+          <div className="flex-1 rounded-md bg-slate-800 border border-slate-700" />
+          <div className="flex-1 rounded-md bg-slate-800 border border-slate-700" />
+          <div className="flex-1 rounded-md bg-slate-800 border border-slate-700" />
+        </div>
+      </div>
+    );
+  }
+
+  if (templateId === "masonry-editorial") {
+    return (
+      <div className="h-24 w-full rounded-lg border border-border bg-white p-2 flex gap-1.5">
+        <div className="w-1/3 flex flex-col gap-1.5">
+          <div className={`h-10 rounded-md ${tint.strong}`} />
+          <div className="flex-1 rounded-md bg-ink-100" />
+        </div>
+        <div className="w-1/3 flex flex-col gap-1.5">
+          <div className="flex-1 rounded-md bg-ink-100" />
+          <div className={`h-10 rounded-md ${tint.soft}`} />
+        </div>
+        <div className="w-1/3 flex flex-col gap-1.5">
+          <div className={`h-7 rounded-md ${tint.strong}`} />
+          <div className="flex-1 rounded-md bg-ink-100" />
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="h-24 w-full rounded-lg border border-border bg-ink-50" />;
+}
+
+function TemplateCard({ template, active, onApply, compact = false }) {
+  const tag = TEMPLATE_TAGS[template.id];
   return (
-    <div className="space-y-2.5">
-      {templates.map((t) => {
-        const tag = TEMPLATE_TAGS[t.id];
-        const def = BLOCK_DEFINITIONS[t.blocks[0]?.type];
-        const Icon = def?.icon;
-        return (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onApply(t)}
-            title={t.description}
-            className={`w-full text-left border rounded-xl p-3 hover:border-primary hover:bg-primary-50/30 transition-colors group relative ${tag ? CARD_BORDER_CLASSES[tag.color] : "border-border"}`}
-          >
-            {tag && (
-              <span className={`absolute top-2.5 right-2.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full ${BADGE_COLOR_CLASSES[tag.color]}`}>{tag.badge}</span>
-            )}
-            <div className="flex items-center gap-2 mb-1.5 pr-14">
-              {Icon && (
-                <div className="h-6 w-6 rounded-md bg-primary-50 text-primary flex items-center justify-center shrink-0">
-                  <Icon size={12} />
-                </div>
-              )}
-              <p className="text-[12.5px] font-bold text-ink-900 group-hover:text-primary transition-colors leading-tight">{t.name}</p>
-            </div>
-            <p className="text-[11px] text-ink-500 leading-snug line-clamp-2">{t.description}</p>
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      onClick={() => onApply(template)}
+      title={template.description}
+      className={`group text-left rounded-xl border-2 p-2.5 bg-white transition-all hover:shadow-md ${
+        active ? "border-primary ring-2 ring-primary/15" : "border-border hover:border-primary/40"
+      }`}
+    >
+      <div className="relative mb-2.5">
+        <TemplateThumbnail templateId={template.id} accent={tag?.color} />
+        {tag && (
+          <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full ${BADGE_COLOR_CLASSES[tag.color]}`}>
+            {tag.badge}
+          </span>
+        )}
+        {active && (
+          <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-white flex items-center justify-center shadow-soft ring-2 ring-white">
+            <Check size={11} strokeWidth={3} />
+          </span>
+        )}
+      </div>
+      <p className="text-[12.5px] font-bold text-ink-900 group-hover:text-primary transition-colors leading-tight">{template.name}</p>
+      {!compact && <p className="text-[11px] text-ink-500 mt-1 leading-snug line-clamp-2">{template.description}</p>}
+    </button>
   );
 }
 
-function TemplateModal({ templates, onApply, onClose }) {
+function TemplateModal({ templates, activeTemplateId, onApply, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink-900/50 flex items-center justify-center p-4" style={{ backdropFilter: "blur(2px)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-          <div>
-            <h3 className="text-[15px] font-bold text-ink-900">Template Library</h3>
-            <p className="text-[12px] text-ink-500 mt-0.5">Choose a preset layout to get started. Your current blocks will be replaced.</p>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <h3 className="text-[15px] font-bold text-ink-900">Template Library</h3>
+              <p className="text-[12px] text-ink-500 mt-0.5">Choose a preset layout to get started. Your current blocks will be replaced.</p>
+            </div>
           </div>
           <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-ink-400 hover:bg-gray-100 transition-colors">
             <X size={17} />
           </button>
         </div>
-        <div className="p-6 grid grid-cols-1 gap-4 overflow-y-auto">
-          {templates.map((t) => {
-            const tag = TEMPLATE_TAGS[t.id];
-            return (
-              <div
-                key={t.id}
-                className={`border rounded-xl p-4 hover:border-primary hover:bg-primary-50/30 transition-colors group cursor-pointer relative ${tag ? CARD_BORDER_CLASSES[tag.color] : "border-border"}`}
-                onClick={() => onApply(t)}
-              >
-                {tag && (
-                  <span className={`absolute top-3 right-3 text-[10px] font-bold text-white px-2 py-0.5 rounded-full ${BADGE_COLOR_CLASSES[tag.color]}`}>{tag.badge}</span>
-                )}
-                <div className="flex items-center gap-2 mb-2 pr-20">
-                  {t.blocks.map((b, i) => {
-                    const def = BLOCK_DEFINITIONS[b.type];
-                    if (!def) return null;
-                    const Icon = def.icon;
-                    return (
-                      <div key={i} className="h-7 w-7 rounded-md bg-primary-50 text-primary flex items-center justify-center shrink-0">
-                        <Icon size={13} />
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="text-[13.5px] font-bold text-ink-900 group-hover:text-primary transition-colors">{t.name}</p>
-                <p className="text-[12px] text-ink-500 mt-0.5 leading-snug">{t.description}</p>
-                <button className="mt-3 px-4 py-1.5 rounded-lg bg-primary text-white text-[12px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Use Template
-                </button>
-              </div>
-            );
-          })}
+        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
+          {templates.map((t) => (
+            <TemplateCard key={t.id} template={t} active={activeTemplateId === t.id} onApply={onApply} />
+          ))}
         </div>
       </div>
     </div>

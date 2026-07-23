@@ -1,36 +1,61 @@
-
-
+// components/homepage-builder/BlockSettingsPanel.jsx
 "use client";
 
 import { useState } from "react";
-import { Settings2, ChevronDown, ChevronRight, Newspaper, X, Plus, Trash2 } from "lucide-react";
+import { Settings2, ChevronDown, Newspaper, X, Plus, Trash2 } from "lucide-react";
 import { BLOCK_DEFINITIONS, CATEGORY_OPTIONS, makeCenterSectionForCategory } from "@/lib/blockDefinitions";
 import ArticlePickerModal from "./ArticlePickerModal";
 import { getPreviewArticleById } from "@/lib/articlesSource";
 import { getCategories } from "@/lib/categoriesArticlesApi";
 
+// Same deterministic per-block-type accent used for the icon badge in the
+// Homepage Sections list (SortableBlockItem), so a block's color identity
+// stays consistent between the two panels. Kept as a local copy rather than
+// a shared import to avoid coupling two otherwise-independent components.
+const ICON_PALETTE = [
+  { bg: "bg-blue-50", text: "text-blue-600" },
+  { bg: "bg-amber-50", text: "text-amber-600" },
+  { bg: "bg-emerald-50", text: "text-emerald-600" },
+  { bg: "bg-violet-50", text: "text-violet-600" },
+  { bg: "bg-rose-50", text: "text-rose-600" },
+  { bg: "bg-cyan-50", text: "text-cyan-600" },
+];
+
+function paletteFor(type) {
+  let hash = 0;
+  for (let i = 0; i < type.length; i++) hash = (hash * 31 + type.charCodeAt(i)) >>> 0;
+  return ICON_PALETTE[hash % ICON_PALETTE.length];
+}
+
 export default function BlockSettingsPanel({ block, onUpdate, fullWidth = false }) {
   if (!block) {
     return (
-      <div className="rounded-card border border-border bg-white shadow-soft p-8 text-center">
-        <div className="h-11 w-11 rounded-card bg-primary-50 text-primary flex items-center justify-center mx-auto mb-3">
+      <div className="rounded-2xl border border-dashed border-border bg-white p-10 text-center">
+        <div className="h-12 w-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto mb-3">
           <Settings2 size={20} />
         </div>
         <p className="text-[13.5px] font-semibold text-ink-900">No block selected</p>
-        <p className="text-[12.5px] text-ink-500 mt-1">Click a block in the page structure to edit its settings.</p>
+        <p className="text-[12.5px] text-ink-500 mt-1">Click a block in Homepage Sections to edit its settings here.</p>
       </div>
     );
   }
 
   const def = BLOCK_DEFINITIONS[block.type];
+  const Icon = def?.icon;
+  const palette = paletteFor(block.type);
   const data = block.data;
   const set = (patch) => onUpdate(block.id, patch);
 
   return (
-    <div className="rounded-card border border-border bg-white shadow-soft overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-gray-50/50">
-        <h3 className="text-[13.5px] font-semibold text-ink-900">{def?.label} settings</h3>
-        <p className="text-[11.5px] text-ink-500 mt-0.5">{def?.description}</p>
+    <div className="rounded-2xl border border-border bg-white shadow-soft overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-gray-50/50">
+        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${palette.bg} ${palette.text}`}>
+          {Icon && <Icon size={18} />}
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-[13.5px] font-bold text-ink-900 truncate">{def?.label} settings</h3>
+          <p className="text-[11.5px] text-ink-500 mt-0.5 truncate">{def?.description}</p>
+        </div>
       </div>
 
       {/* On the full-width row layout there's no need to trap settings in a
@@ -38,7 +63,7 @@ export default function BlockSettingsPanel({ block, onUpdate, fullWidth = false 
           every field is reachable without a nested scrollbar. The old
           capped-height + overflow-y-auto is kept only for callers that
           still place this panel in a narrow sticky sidebar column. */}
-      <div className={fullWidth ? "p-4 space-y-4" : "p-4 space-y-4 max-h-[calc(100vh-260px)] overflow-y-auto"}>
+      <div className={fullWidth ? "p-5 space-y-3" : "p-5 space-y-3 max-h-[calc(100vh-260px)] overflow-y-auto"}>
         {block.type === "breakingNews" && <BreakingNewsSettings data={data} set={set} />}
         {block.type === "heroStory" && <HeroStorySettings data={data} set={set} />}
         {block.type === "topStoriesGrid" && <TopStoriesSettings data={data} set={set} />}
@@ -445,17 +470,19 @@ function ThreeColumnSettings({ data, set }) {
 
 function SectionDivider({ label }) {
   return (
-    <div className="flex items-center gap-2 pt-1">
-      <div className="flex-1 h-px bg-border" />
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">{label}</span>
+    <div className="flex items-center gap-2.5 pt-2 first:pt-0">
+      <span className="text-[10.5px] font-bold uppercase tracking-wider text-ink-400 shrink-0">{label}</span>
       <div className="flex-1 h-px bg-border" />
     </div>
   );
 }
 
 function FieldLabel({ children }) {
-  return <label className="block text-[12px] font-medium text-ink-700 mb-1">{children}</label>;
+  return <label className="block text-[12px] font-semibold text-ink-700 mb-1.5">{children}</label>;
 }
+
+const fieldInputClass =
+  "w-full rounded-lg border border-border bg-surface-soft px-3 py-2 text-[12.5px] text-ink-900 placeholder:text-ink-300 hover:border-ink-200 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary focus:bg-white transition-colors";
 
 function TextField({ label, value, onChange, placeholder }) {
   return (
@@ -466,7 +493,7 @@ function TextField({ label, value, onChange, placeholder }) {
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-border bg-surface-soft px-3 py-2 text-[12.5px] text-ink-900 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        className={fieldInputClass}
       />
     </div>
   );
@@ -484,7 +511,7 @@ function ImageUploadField({ label = "Ad image", value, onChange, hint }) {
         <div className="relative rounded-lg border border-border bg-surface-soft p-2">
           <img src={value} alt="Advertisement preview" className="max-h-28 w-full object-contain rounded" />
           <div className="flex items-center gap-2 mt-2">
-            <label className="flex-1 text-center rounded-lg border border-border bg-white px-2 py-1.5 text-[11.5px] text-ink-600 cursor-pointer hover:border-primary/40 transition-colors">
+            <label className="flex-1 text-center rounded-lg border border-border bg-white px-2 py-1.5 text-[11.5px] font-medium text-ink-600 cursor-pointer hover:border-primary/40 hover:text-primary transition-colors">
               Replace image
               <input
                 type="file"
@@ -502,14 +529,14 @@ function ImageUploadField({ label = "Ad image", value, onChange, hint }) {
             <button
               type="button"
               onClick={() => onChange("")}
-              className="rounded-lg border border-border px-2 py-1.5 text-[11.5px] text-red-600 hover:bg-red-50 transition-colors"
+              className="rounded-lg border border-border px-2 py-1.5 text-[11.5px] font-medium text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors"
             >
               Remove
             </button>
           </div>
         </div>
       ) : (
-        <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-soft px-3 py-5 text-[12px] text-ink-500 cursor-pointer hover:border-primary/40 transition-colors">
+        <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-soft px-3 py-6 text-[12px] font-medium text-ink-500 cursor-pointer hover:border-primary/40 hover:bg-primary-50/30 hover:text-primary transition-colors">
           Click to upload advertisement image
           <input
             type="file"
@@ -539,7 +566,7 @@ function NumberField({ label, value, onChange, min = 0, max = 9999 }) {
         min={min}
         max={max}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-lg border border-border bg-surface-soft px-3 py-2 text-[12.5px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        className={fieldInputClass}
       />
     </div>
   );
@@ -552,7 +579,8 @@ function SelectField({ label, value, onChange, options }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-border bg-surface-soft px-3 py-2 text-[12.5px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+        className={`${fieldInputClass} cursor-pointer appearance-none bg-[length:16px] bg-[right_0.6rem_center] bg-no-repeat`}
+        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238991A3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")", paddingRight: "2rem" }}
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>{String(opt)}</option>
@@ -567,18 +595,20 @@ function ColorField({ label, value, onChange }) {
     <div>
       <FieldLabel>{label}</FieldLabel>
       <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={value && value.startsWith("#") ? value : "#ffffff"}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 w-10 rounded border border-border cursor-pointer"
-        />
+        <div className="relative h-9 w-11 shrink-0 rounded-lg border border-border overflow-hidden">
+          <input
+            type="color"
+            value={value && value.startsWith("#") ? value : "#ffffff"}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute -inset-1 cursor-pointer"
+          />
+        </div>
         <input
           type="text"
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder="#000000"
-          className="flex-1 rounded-lg border border-border bg-surface-soft px-2.5 py-1.5 text-[12px] text-ink-900 font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className={`${fieldInputClass} font-mono`}
         />
       </div>
     </div>
@@ -588,9 +618,9 @@ function ColorField({ label, value, onChange }) {
 function RangeField({ label, value, onChange, min, max, unit = "" }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1.5">
         <FieldLabel>{label}</FieldLabel>
-        <span className="text-[12px] text-ink-500 font-mono">{value}{unit}</span>
+        <span className="text-[11.5px] text-ink-500 font-mono bg-surface-soft border border-border rounded px-1.5 py-0.5">{value}{unit}</span>
       </div>
       <input
         type="range"
@@ -606,13 +636,13 @@ function RangeField({ label, value, onChange, min, max, unit = "" }) {
 
 function ToggleField({ label, value, onChange }) {
   return (
-    <label className="flex items-center justify-between gap-3 cursor-pointer">
+    <label className="flex items-center justify-between gap-3 cursor-pointer rounded-lg px-2.5 py-2 -mx-2.5 hover:bg-surface-soft transition-colors">
       <span className="text-[12.5px] font-medium text-ink-700">{label}</span>
       <button
         role="switch"
         aria-checked={!!value}
         onClick={() => onChange(!value)}
-        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${value ? "bg-primary" : "bg-border"}`}
+        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${value ? "bg-primary" : "bg-ink-200"}`}
       >
         <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform ${value ? "translate-x-4" : "translate-x-0"}`} />
       </button>
@@ -1763,15 +1793,25 @@ function MasonryEditorialSettings({ data, set }) {
   );
 }
 
-function Accordion({ label, children }) {
-  const [open, setOpen] = useState(true);
+// Closed by default — a mega-layout block can have 10+ of these, so opening
+// them all at once buries the admin in fields. Clicking the header (or its
+// chevron) opens just that one section.
+function Accordion({ label, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors">
-        <span className="text-[12.5px] font-semibold text-ink-900">{label}</span>
-        {open ? <ChevronDown size={14} className="text-ink-400" /> : <ChevronRight size={14} className="text-ink-400" />}
+    <div className={`rounded-xl border overflow-hidden transition-colors ${open ? "border-primary/25" : "border-border"}`}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center justify-between px-3.5 py-2.5 transition-colors ${
+          open ? "bg-primary-50/50 hover:bg-primary-50" : "bg-gray-50/70 hover:bg-gray-100"
+        }`}
+      >
+        <span className={`text-[12.5px] font-semibold ${open ? "text-primary" : "text-ink-900"}`}>{label}</span>
+        <span className={`h-5 w-5 rounded-md flex items-center justify-center transition-colors ${open ? "bg-primary text-white" : "text-ink-400"}`}>
+          <ChevronDown size={13} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
       </button>
-      {open && <div className="p-3 space-y-3">{children}</div>}
+      {open && <div className="p-3.5 space-y-3 border-t border-primary/10 bg-white">{children}</div>}
     </div>
   );
 }
