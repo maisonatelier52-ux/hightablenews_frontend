@@ -27,14 +27,18 @@ import {
 import { getArticles, getCategories, onDataChange, preloadCategoriesAndArticlesAdmin } from "@/lib/categoriesArticlesApi";
 import { getAuthors, onAuthorsChange, preloadAuthorsAdmin } from "@/lib/authorsApi";
 import { dashboardApi } from "@/apis/adminApis";
+import { getStoredAdmin } from "@/lib/adminSession";
 
+// `key` matches an AdminUser.permissions field (see lib/permissionsConfig.js)
+// so Quick Access only shows builders the signed-in admin can open.
+// Superadmins always see every card.
 const BUILDERS = [
-  { href: "/admin/header-builder", title: "Header Builder", desc: "Edit navigation, logo & toggles", icon: PanelTop },
-  { href: "/admin/footer-builder", title: "Footer Builder", desc: "Manage footer columns & links", icon: PanelBottom },
-  { href: "/admin/homepage-builder", title: "Homepage Builder", desc: "Drag & drop your homepage layout", icon: LayoutTemplate },
-  { href: "/admin/categorypage-builder", title: "Category Page Builder", desc: "Design category listing pages", icon: FileSearch },
-  { href: "/admin/articledetailpage-builder", title: "Article Detail Builder", desc: "Layout the article reading page", icon: FileText },
-  { href: "/admin/authordetailpage-builder", title: "Author Detail Builder", desc: "Design the author profile page", icon: UserSquare2 },
+  { href: "/admin/header-builder", title: "Header Builder", desc: "Edit navigation, logo & toggles", icon: PanelTop, key: "headerBuilder" },
+  { href: "/admin/footer-builder", title: "Footer Builder", desc: "Manage footer columns & links", icon: PanelBottom, key: "footerBuilder" },
+  { href: "/admin/homepage-builder", title: "Homepage Builder", desc: "Drag & drop your homepage layout", icon: LayoutTemplate, key: "homepageBuilder" },
+  { href: "/admin/categorypage-builder", title: "Category Page Builder", desc: "Design category listing pages", icon: FileSearch, key: "categoryPageBuilder" },
+  { href: "/admin/articledetailpage-builder", title: "Article Detail Builder", desc: "Layout the article reading page", icon: FileText, key: "articleDetailBuilder" },
+  { href: "/admin/authordetailpage-builder", title: "Author Detail Builder", desc: "Design the author profile page", icon: UserSquare2, key: "authorDetailBuilder" },
 ];
 
 const DONUT_PALETTE = ["#152A4A", "#B68A4E", "#4E6690", "#1E9A63", "#8397B9", "#DCE3EF"];
@@ -83,6 +87,13 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState(null);
   const [backendStats, setBackendStats] = useState(null);
   const [showAllActivity, setShowAllActivity] = useState(false);
+
+  const admin = getStoredAdmin();
+  const isSuperAdmin = admin?.role === "superadmin";
+  const visibleBuilders = useMemo(
+    () => (isSuperAdmin ? BUILDERS : BUILDERS.filter((b) => admin?.permissions?.[b.key])),
+    [isSuperAdmin, admin]
+  );
 
   const loadAll = useCallback(async () => {
     await Promise.all([preloadCategoriesAndArticlesAdmin(), preloadAuthorsAdmin()]);
@@ -250,27 +261,33 @@ export default function DashboardPage() {
             */}
             <div className="xl:sticky xl:top-6">
               <h3 className="text-[13px] font-semibold text-ink-500 uppercase tracking-wide mb-3">Quick access</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {BUILDERS.map((b) => {
-                  const Icon = b.icon;
-                  return (
-                    <Link
-                      key={b.href}
-                      href={b.href}
-                      className="group rounded-card border border-border bg-white p-5 shadow-soft hover:shadow-lift hover:border-primary/30 transition-all"
-                    >
-                      <div className="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center text-primary mb-3">
-                        <Icon size={17} />
-                      </div>
-                      <p className="text-[14px] font-semibold text-ink-900">{b.title}</p>
-                      <p className="text-[12.5px] text-ink-500 mt-1">{b.desc}</p>
-                      <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-primary mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Open builder <ArrowRight size={13} />
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
+              {visibleBuilders.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleBuilders.map((b) => {
+                    const Icon = b.icon;
+                    return (
+                      <Link
+                        key={b.href}
+                        href={b.href}
+                        className="group rounded-card border border-border bg-white p-5 shadow-soft hover:shadow-lift hover:border-primary/30 transition-all"
+                      >
+                        <div className="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center text-primary mb-3">
+                          <Icon size={17} />
+                        </div>
+                        <p className="text-[14px] font-semibold text-ink-900">{b.title}</p>
+                        <p className="text-[12.5px] text-ink-500 mt-1">{b.desc}</p>
+                        <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-primary mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Open builder <ArrowRight size={13} />
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-card border border-border bg-white p-5 shadow-soft text-[13px] text-ink-400">
+                  No builders enabled for your account yet — ask a super admin for access.
+                </div>
+              )}
             </div>
           </div>
 

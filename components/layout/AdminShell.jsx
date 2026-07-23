@@ -6,8 +6,13 @@
 // Each admin page renders `<AdminShell title="...">{page content}</AdminShell>`
 // so this is the one place that owns navigation, the signed-in admin's
 // name/avatar, and logout.
+//
+// Nav items are filtered per signed-in admin: Dashboard is always visible,
+// "Users" is super-admin only, and every other item requires its matching
+// `key` in admin.permissions (superadmins have every permission set to
+// true server-side, so no special-casing is needed for them here).
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -37,41 +42,55 @@ import { getStoredAdmin, clearSession } from "@/lib/adminSession";
 const NAV_SECTIONS = [
   {
     label: "Overview",
-    items: [{ href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    items: [{ href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard }], // no key = always visible
   },
   {
     label: "Content",
     items: [
-      { href: "/admin/articles", label: "Articles", icon: Newspaper },
-      { href: "/admin/categories", label: "Categories", icon: FolderTree },
-      { href: "/admin/authors", label: "Authors", icon: Users2 },
-      { href: "/admin/pages", label: "Pages", icon: FileText },
-      { href: "/admin/media-library", label: "Media Library", icon: ImageIcon },
+      { href: "/admin/articles", label: "Articles", icon: Newspaper, key: "articles" },
+      { href: "/admin/categories", label: "Categories", icon: FolderTree, key: "categories" },
+      { href: "/admin/authors", label: "Authors", icon: Users2, key: "authors" },
+      { href: "/admin/pages", label: "Pages", icon: FileText, key: "pages" },
+      { href: "/admin/media-library", label: "Media Library", icon: ImageIcon, key: "media" },
     ],
   },
   {
     label: "Builders",
     items: [
-      { href: "/admin/header-builder", label: "Header Builder", icon: PanelTop },
-      { href: "/admin/footer-builder", label: "Footer Builder", icon: PanelBottom },
-      { href: "/admin/homepage-builder", label: "Homepage Builder", icon: LayoutTemplate },
-      { href: "/admin/categorypage-builder", label: "Category Page Builder", icon: FileSearch },
-      { href: "/admin/articledetailpage-builder", label: "Article Detail Builder", icon: FileText },
-      { href: "/admin/authordetailpage-builder", label: "Author Detail Builder", icon: UserSquare2 },
+      { href: "/admin/header-builder", label: "Header Builder", icon: PanelTop, key: "headerBuilder" },
+      { href: "/admin/footer-builder", label: "Footer Builder", icon: PanelBottom, key: "footerBuilder" },
+      { href: "/admin/homepage-builder", label: "Homepage Builder", icon: LayoutTemplate, key: "homepageBuilder" },
+      { href: "/admin/categorypage-builder", label: "Category Page Builder", icon: FileSearch, key: "categoryPageBuilder" },
+      { href: "/admin/articledetailpage-builder", label: "Article Detail Builder", icon: FileText, key: "articleDetailBuilder" },
+      { href: "/admin/authordetailpage-builder", label: "Author Detail Builder", icon: UserSquare2, key: "authorDetailBuilder" },
     ],
   },
   {
     label: "Admin",
     items: [
-      { href: "/admin/users", label: "Users", icon: Users2 },
-      { href: "/admin/subscribers", label: "Subscribers", icon: Mail },
-      { href: "/admin/sitemap-robots", label: "Sitemap & Robots", icon: FileSearch },
-      { href: "/admin/settings", label: "Settings", icon: Settings },
+      { href: "/admin/users", label: "Users", icon: Users2, superAdminOnly: true },
+      { href: "/admin/subscribers", label: "Subscribers", icon: Mail, key: "subscribers" },
+      { href: "/admin/sitemap-robots", label: "Sitemap & Robots", icon: FileSearch, key: "sitemap" },
+      { href: "/admin/settings", label: "Settings", icon: Settings, key: "settings" },
     ],
   },
 ];
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "/";
+
+/** Returns NAV_SECTIONS with any item the admin can't access stripped out (empty sections dropped too). */
+function getVisibleSections(admin) {
+  const isSuperAdmin = admin?.role === "superadmin";
+  return NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      if (!item.key && !item.superAdminOnly) return true; // Dashboard
+      if (item.superAdminOnly) return isSuperAdmin;
+      if (isSuperAdmin) return true;
+      return Boolean(admin?.permissions?.[item.key]);
+    }),
+  })).filter((section) => section.items.length > 0);
+}
 
 function Logo({ collapsed }) {
   return (
@@ -89,10 +108,10 @@ function Logo({ collapsed }) {
   );
 }
 
-function NavLinks({ pathname, onNavigate, collapsed }) {
+function NavLinks({ sections, pathname, onNavigate, collapsed }) {
   return (
     <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-6">
-      {NAV_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <div key={section.label}>
           {!collapsed && (
             <p className="px-2.5 mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink-300 whitespace-nowrap">
@@ -142,6 +161,7 @@ export default function AdminShell({ title, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const admin = getStoredAdmin();
+  const sections = useMemo(() => getVisibleSections(admin), [admin]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("htn-admin-sidebar-collapsed");
@@ -198,7 +218,7 @@ export default function AdminShell({ title, children }) {
             </Link>
           )}
         </div>
-        <NavLinks pathname={pathname} collapsed={collapsed} />
+        <NavLinks sections={sections} pathname={pathname} collapsed={collapsed} />
         <div className={`px-3 pb-3 flex ${collapsed ? "justify-center" : ""}`}>
           <a
             href={SITE_URL}
@@ -268,7 +288,7 @@ export default function AdminShell({ title, children }) {
                 New Article
               </Link>
             </div>
-            <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} collapsed={false} />
+            <NavLinks sections={sections} pathname={pathname} onNavigate={() => setMobileOpen(false)} collapsed={false} />
             <div className="border-t border-border p-3">
               <button
                 onClick={handleLogout}
