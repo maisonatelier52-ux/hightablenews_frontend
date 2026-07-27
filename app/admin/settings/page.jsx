@@ -6,12 +6,14 @@ import AdminShell from "@/components/layout/AdminShell";
 import { Settings as SettingsIcon, Loader2, Save, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { settingsApi } from "@/apis/adminApis";
 import { SOCIAL_PLATFORM_OPTIONS } from "@/lib/socialPlatforms";
+import FaviconUploadField from "@/components/admin/FaviconUploadField";
+import ImageUploadField from "@/components/page-builder/ImageUploadField";
 
 const EMPTY = {
   siteName: "",
   logo: "",
   favicon: "",
-  seoDefaults: { metaTitle: "", metaDescription: "", ogImage: "", keywords: [] },
+  seoDefaults: { metaTitle: "", metaDescription: "", ogImage: "", twitterImage: "", keywords: [] },
   // A list of { platform, url } entries rather than fixed keys, so the
   // admin can add as many social media accounts as they like. This is the
   // single source of truth for social URLs — the Header Builder and Footer
@@ -184,14 +186,34 @@ export default function SettingsPage() {
           <h2 className="text-[14px] font-semibold text-ink-900 flex items-center gap-2"><SettingsIcon size={16} /> General</h2>
           <Field label="Site name" value={data.siteName} onChange={(v) => set({ siteName: v })} placeholder="HighTableNews" />
           <Field label="Logo URL" value={data.logo} onChange={(v) => set({ logo: v })} placeholder="https://…/logo.webp" />
-          <Field label="Favicon URL" value={data.favicon} onChange={(v) => set({ favicon: v })} />
+          <FaviconUploadField value={data.favicon} onChange={(v) => set({ favicon: v })} />
         </section>
 
         <section className="bg-white border border-border rounded-card p-5 flex flex-col gap-4">
           <h2 className="text-[14px] font-semibold text-ink-900">SEO defaults</h2>
           <Field label="Meta title" value={data.seoDefaults.metaTitle} onChange={(v) => setNested("seoDefaults", { metaTitle: v })} />
           <Field label="Meta description" value={data.seoDefaults.metaDescription} onChange={(v) => setNested("seoDefaults", { metaDescription: v })} />
-          <Field label="Default OG image URL" value={data.seoDefaults.ogImage} onChange={(v) => setNested("seoDefaults", { ogImage: v })} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <ImageUploadField
+                label="Default OpenGraph image"
+                hint="Shown on Facebook/LinkedIn/etc. previews for any page (home, category, about, privacy policy…) that doesn't set its own image. Upload from your device — WEBP, any size."
+                value={data.seoDefaults.ogImage}
+                onChange={(v) => setNested("seoDefaults", { ogImage: v })}
+                aspect="aspect-[1.91/1]"
+              />
+            </div>
+            <div>
+              <ImageUploadField
+                label="Default Twitter/X card image"
+                hint="Optional — leave empty to reuse the OpenGraph image above for Twitter/X cards too. Upload from your device — WEBP, any size."
+                value={data.seoDefaults.twitterImage}
+                onChange={(v) => setNested("seoDefaults", { twitterImage: v })}
+                aspect="aspect-[1.91/1]"
+              />
+            </div>
+          </div>
         </section>
 
         <section className="bg-white border border-border rounded-card p-5 flex flex-col gap-4">

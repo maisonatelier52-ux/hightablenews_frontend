@@ -77,6 +77,19 @@ export async function uploadImage(file) {
   return media.secureUrl || media.url;
 }
 
+/** Uploads a .ico favicon file as-is (no WEBP conversion) and returns its
+ *  hosted URL. Used by the Settings page's Favicon uploader. */
+export async function uploadFavicon(file) {
+  const formData = new FormData();
+  formData.append("favicon", file);
+  const media = await unwrap(
+    axiosInstance.post("/admin/media/upload-favicon", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+  );
+  return media.secureUrl || media.url;
+}
+
 // ─── Page builders (Header / Footer / Homepage) ────────────────────────
 export const headerApi = {
   get: () => unwrap(axiosInstance.get("/admin/header")),

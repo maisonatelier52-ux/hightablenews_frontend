@@ -368,10 +368,14 @@ export default function DashboardPage() {
                         <td className="px-3 py-3">
                           <span
                             className={`text-[12px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
-                              a.isPublished ? "bg-emerald-50 text-emerald-600" : "bg-surface-muted text-ink-500"
+                              a.isPublished
+                                ? "bg-emerald-50 text-emerald-600"
+                                : a.status === "scheduled"
+                                ? "bg-blue-50 text-blue-600"
+                                : "bg-surface-muted text-ink-500"
                             }`}
                           >
-                            {a.isPublished ? "Published" : "Draft"}
+                            {a.isPublished ? "Published" : a.status === "scheduled" ? "Scheduled" : "Draft"}
                           </span>
                         </td>
                         <td className="px-5 py-3 text-[12.5px] text-ink-500 hidden lg:table-cell whitespace-nowrap">

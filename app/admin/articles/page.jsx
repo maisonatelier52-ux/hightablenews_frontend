@@ -325,8 +325,18 @@ const EMPTY_FORM = {
   title: "", slug: "", metaTitle: "", metaDescription: "", excerpt: "",
   categoryId: "", authorId: "", author: "", newsType: "news", type: "normal",
   date: new Date().toISOString().split("T")[0],
-  readTime: "", isPublished: true, imageAlt: "", keywords: "", tags: "",
+  readTime: "", status: "published", scheduledFor: "", imageAlt: "", keywords: "", tags: "",
 };
+
+/** <input type="datetime-local"> needs "YYYY-MM-DDTHH:mm" — converts
+ *  to/from that from an ISO string (what the backend sends/expects). */
+function toDatetimeLocalValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 // Resolves the author auto-assigned to a category (one primary author per
 // beat, managed on the Authors admin page). Used to keep the article's
@@ -567,6 +577,11 @@ export default function ArticlesPage() {
     if (!formData.keywords.trim())                          e.keywords        = "Keywords are required.";
     if (!formData.tags.trim())                              e.tags            = "Tags are required.";
     if (!editingArticle && !mainImgBase64)                  e.mainImage       = "Featured image is required.";
+    if (formData.status === "scheduled") {
+      if (!formData.scheduledFor)                           e.scheduledFor    = "Pick a publish date & time.";
+      else if (new Date(formData.scheduledFor).getTime() <= Date.now())
+                                                              e.scheduledFor    = "Scheduled time must be in the future.";
+    }
     if (contentBlocks.length === 0)                         e.content         = "Add at least one content block.";
     else if (!hasValidParagraph)                            e.content         = "At least one paragraph block with text is required.";
     if (hasErrors && !e.content)                            e.content         = "Fix errors in content blocks above.";
@@ -646,7 +661,8 @@ export default function ArticlesPage() {
         // as an empty/missing field.
         date:             article.date ? String(article.date).split("T")[0] : new Date().toISOString().split("T")[0],
         readTime:         article.readTime || "",
-        isPublished:      article.isPublished ?? true,
+        status:           article.status || (article.isPublished ? "published" : "draft"),
+        scheduledFor:     toDatetimeLocalValue(article.scheduledFor),
         imageAlt:         article.imageAlt || "",
         keywords:         (article.keywords || []).join(", "),
         tags:             (article.tags || []).join(", "),
@@ -964,13 +980,30 @@ export default function ArticlesPage() {
                         placeholder="e.g. 5 Min Read" className={inpCls("readTime")} />
                     </FormField>
                     <FormField label="Status">
-                      <select value={String(formData.isPublished)}
-                        onChange={(e) => set({ isPublished: e.target.value === "true" })}
-                        className={inpCls("isPublished") + " cursor-pointer"}>
-                        <option value="true">Published</option>
-                        <option value="false">Draft</option>
+                      <select value={formData.status}
+                        onChange={(e) => {
+                          const status = e.target.value;
+                          set({ status, ...(status !== "scheduled" ? { scheduledFor: "" } : {}) });
+                        }}
+                        className={inpCls("status") + " cursor-pointer"}>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                        <option value="scheduled">Scheduled</option>
                       </select>
                     </FormField>
+                    {formData.status === "scheduled" && (
+                      <FormField
+                        label="Publish date & time"
+                        required
+                        error={formErrors.scheduledFor}
+                        hint="The article stays as a draft until this exact date and time, then goes live automatically."
+                      >
+                        <input type="datetime-local" value={formData.scheduledFor}
+                          onChange={(e) => set({ scheduledFor: e.target.value })}
+                          min={toDatetimeLocalValue(new Date().toISOString())}
+                          className={inpCls("scheduledFor") + " cursor-pointer"} />
+                      </FormField>
+                    )}
                   </div>
                 </div>
 
@@ -1135,9 +1168,17 @@ function ArticleRow({ article, getCategoryName, onEdit, onDelete }) {
                   {getCategoryName(article.categoryId)}
                 </span>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                  article.isPublished ? "bg-green-100 text-green-700" : "bg-gray-100 text-ink-500"
+                  article.status === "published"
+                    ? "bg-green-100 text-green-700"
+                    : article.status === "scheduled"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-100 text-ink-500"
                 }`}>
-                  {article.isPublished ? "Published" : "Draft"}
+                  {article.status === "published"
+                    ? "Published"
+                    : article.status === "scheduled"
+                    ? `Scheduled${article.scheduledFor ? ` · ${new Date(article.scheduledFor).toLocaleString()}` : ""}`
+                    : "Draft"}
                 </span>
                 {article.type && article.type !== "normal" && (
                   <span className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium capitalize">
