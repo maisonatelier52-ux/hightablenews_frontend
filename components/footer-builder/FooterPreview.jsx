@@ -1,8 +1,11 @@
+
+// components/footer-builder/FooterPreview.jsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Twitter, Linkedin, Instagram, Youtube, Facebook, Music2, Globe, BookOpen, Rss, MessageCircle, Pin, ChevronDown } from "lucide-react";
 import NewsletterForm from "@/components/site/NewsletterForm";
+import { getSocialLinksMap } from "@/lib/api";
 
 const SOCIAL_ICONS = {
   twitter: Twitter,
@@ -144,22 +147,27 @@ function LogoMark({ branding, bottomBar, theme }) {
 }
 
 /** Circular bordered social icons used by the Masthead templates (matches the
- *  reference design: w-9 h-9 rounded-full border, hover:border-white). */
-function SocialRow({ social, theme, mobile }) {
-  if (!social || social.length === 0) return null;
+ *  reference design: w-9 h-9 rounded-full border, hover:border-white).
+ *  `social` is the ordered list of *selected* platform keys chosen in the
+ *  Footer Builder; `linksMap` resolves each key to its URL from Settings.
+ *  Platforms without a configured URL are skipped rather than rendered as
+ *  a dead link. */
+function SocialRow({ social, theme, mobile, linksMap }) {
+  const items = (social || []).filter((platform) => linksMap?.[platform]);
+  if (items.length === 0) return null;
   return (
     <div className={`flex gap-3 mt-5 ${mobile ? "justify-center" : ""}`}>
-      {social.map((s) => {
-        const Icon = SOCIAL_ICONS[s.platform] || Globe;
-        const hasLink = s.url && s.url !== "#";
+      {items.map((platform) => {
+        const Icon = SOCIAL_ICONS[platform] || Globe;
+        const url = linksMap[platform];
         return (
           <a
-            key={s.id}
-            href={s.url || "#"}
-            target={hasLink ? "_blank" : undefined}
-            rel={hasLink ? "noopener noreferrer" : undefined}
-            aria-label={s.platform}
-            title={s.platform}
+            key={platform}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={platform}
+            title={platform}
             className="flex items-center justify-center rounded-full border transition-colors duration-300"
             style={{ width: 36, height: 36, borderColor: theme.border, color: theme.link }}
             onMouseEnter={(e) => {
@@ -182,7 +190,7 @@ function SocialRow({ social, theme, mobile }) {
 /** Brand column for the Masthead templates: logo, italic tagline, meta line
  *  (est. date / office locations), and the social icon row — all left-aligned
  *  rather than centered, matching a classic NYT/WSJ-style masthead footer. */
-function MastheadBrand({ branding, theme, taglineColor, social, mobile }) {
+function MastheadBrand({ branding, theme, taglineColor, social, mobile, linksMap }) {
   return (
     <div className={mobile ? "text-center" : ""}>
       {(branding.type || "text") === "image" && branding.image ? (
@@ -228,7 +236,7 @@ function MastheadBrand({ branding, theme, taglineColor, social, mobile }) {
           {branding.meta}
         </p>
       )}
-      <SocialRow social={social} theme={theme} mobile={mobile} />
+      <SocialRow social={social} theme={theme} mobile={mobile} linksMap={linksMap} />
     </div>
   );
 }
@@ -237,6 +245,21 @@ export default function FooterPreview({ footer, device = "desktop" }) {
   const mobile = device === "mobile";
   const { theme, branding, columns, newsletter, social, bottomBar, depth, layout } = footer;
   const mobileSettings = footer.mobile || { layout: "accordion", defaultExpanded: false, showBorders: true, fontSize: 13, collapseAnimation: true };
+  const [linksMap, setLinksMap] = useState({});
+
+  // `social` on the footer config is just the ordered list of selected
+  // platform *keys* — the actual account URLs live in one place, the
+  // Settings page's "Social links" section. Resolve them here so the
+  // icons rendered below are real, clickable links.
+  useEffect(() => {
+    let cancelled = false;
+    getSocialLinksMap().then((map) => {
+      if (!cancelled) setLinksMap(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const accentLine = theme.accentLine || "#5c1111";
   const taglineColor = theme.taglineColor || theme.link;
@@ -286,7 +309,7 @@ export default function FooterPreview({ footer, device = "desktop" }) {
                 : { gridTemplateColumns: `1.5fr repeat(${Math.max(columns.length, 1)}, 1fr)`, gap: `${depth.columnGap}px` }
             }
           >
-            {brandFirst && <MastheadBrand branding={branding} theme={theme} taglineColor={taglineColor} social={social} mobile={mobile} />}
+            {brandFirst && <MastheadBrand branding={branding} theme={theme} taglineColor={taglineColor} social={social} mobile={mobile} linksMap={linksMap} />}
 
             {columns.map((col) => (
               <div key={col.id} className={mobile ? "text-center" : ""}>
@@ -300,7 +323,7 @@ export default function FooterPreview({ footer, device = "desktop" }) {
               </div>
             ))}
 
-            {!brandFirst && <MastheadBrand branding={branding} theme={theme} taglineColor={taglineColor} social={social} mobile={mobile} />}
+            {!brandFirst && <MastheadBrand branding={branding} theme={theme} taglineColor={taglineColor} social={social} mobile={mobile} linksMap={linksMap} />}
           </div>
         ) : (
           <>
@@ -438,22 +461,21 @@ export default function FooterPreview({ footer, device = "desktop" }) {
                 </span>
               ))}
 
-            {social.length > 0 && (
+            {social.filter((platform) => linksMap?.[platform]).length > 0 && (
               <div
                 className={`flex items-center gap-3 ${activeLinks.length > 0 ? "ml-2 pl-3" : ""}`}
                 style={activeLinks.length > 0 ? { borderLeft: `1px solid ${theme.border}` } : undefined}
               >
-                {social.map((s) => {
-                  const Icon = SOCIAL_ICONS[s.platform] || Globe;
-                  const hasLink = s.url && s.url !== "#";
+                {social.filter((platform) => linksMap?.[platform]).map((platform) => {
+                  const Icon = SOCIAL_ICONS[platform] || Globe;
                   return (
                     <a
-                      key={s.id}
-                      href={s.url || "#"}
-                      target={hasLink ? "_blank" : undefined}
-                      rel={hasLink ? "noopener noreferrer" : undefined}
-                      aria-label={s.platform}
-                      title={s.platform}
+                      key={platform}
+                      href={linksMap[platform]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={platform}
+                      title={platform}
                       style={{ color: theme.link }}
                     >
                       <Icon size={14} />

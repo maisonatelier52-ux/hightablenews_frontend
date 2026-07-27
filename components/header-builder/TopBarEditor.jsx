@@ -1,19 +1,12 @@
+
+// components/header-builder/TopBarEditor.jsx
 "use client";
 
+import { useEffect, useState } from "react";
+import { Newspaper, MessageSquare, Twitter, Info } from "lucide-react";
 import { Field, Input, Select, ToggleRow, ColorInput } from "@/components/ui/Field";
-import { Instagram, Twitter, Facebook, Linkedin, Youtube, Newspaper, MessageSquare, BookOpen, Rss, MessageCircle, Pin } from "lucide-react";
-
-const SOCIAL_PLATFORMS = [
-  { key: "instagram", label: "Instagram", icon: Instagram },
-  { key: "twitter", label: "X (Twitter)", icon: Twitter },
-  { key: "facebook", label: "Facebook", icon: Facebook },
-  { key: "linkedin", label: "LinkedIn", icon: Linkedin },
-  { key: "youtube", label: "YouTube", icon: Youtube },
-  { key: "medium", label: "Medium", icon: BookOpen },
-  { key: "substack", label: "Substack", icon: Rss },
-  { key: "reddit", label: "Reddit", icon: MessageCircle },
-  { key: "pinterest", label: "Pinterest", icon: Pin },
-];
+import { settingsApi } from "@/apis/adminApis";
+import { socialPlatformLabel, socialPlatformIcon } from "@/lib/socialPlatforms";
 
 const RIGHT_ITEMS = [
   { key: "socialIcons", label: "Social Icons", icon: Twitter },
@@ -22,6 +15,28 @@ const RIGHT_ITEMS = [
 ];
 
 export default function TopBarEditor({ topBar, onChange }) {
+  // The list of social platforms that actually have a URL configured on
+  // the Settings page — that's the single source of truth for social
+  // account links now. The admin here only picks *which* of those to show
+  // as icons in the top bar; there's no per-icon URL to type anymore.
+  const [siteSocialLinks, setSiteSocialLinks] = useState(null); // null = loading
+
+  useEffect(() => {
+    let cancelled = false;
+    settingsApi
+      .get()
+      .then((s) => {
+        if (cancelled) return;
+        setSiteSocialLinks((s?.socialLinks || []).filter((x) => x?.platform && x?.url));
+      })
+      .catch(() => {
+        if (!cancelled) setSiteSocialLinks([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function set(patch) {
     onChange({ ...topBar, ...patch });
   }
@@ -37,9 +52,7 @@ export default function TopBarEditor({ topBar, onChange }) {
     set({ socialPlatforms: has ? platforms.filter((k) => k !== key) : [...platforms, key] });
   }
 
-  function setSocialLink(key, url) {
-    set({ socialLinks: { ...(topBar.socialLinks || {}), [key]: url } });
-  }
+  const availablePlatforms = siteSocialLinks || [];
 
   return (
     <div className="space-y-4">
@@ -97,47 +110,38 @@ export default function TopBarEditor({ topBar, onChange }) {
       )}
 
       {topBar.rightItems.includes("socialIcons") && (
-        <Field label="Select Social Platforms">
-          <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-surface-soft/50">
-            {SOCIAL_PLATFORMS.map(({ key, label, icon: Icon }) => {
-              const active = (topBar.socialPlatforms || []).includes(key);
-              return (
-                <button
-                  key={key}
-                  onClick={() => toggleSocialPlatform(key)}
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
-                    active
-                      ? "border-primary bg-primary text-white"
-                      : "border-border text-ink-600 hover:border-primary/40"
-                  }`}
-                >
-                  <Icon size={12} />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </Field>
-      )}
-
-      {topBar.rightItems.includes("socialIcons") && (topBar.socialPlatforms || []).length > 0 && (
-        <Field label="Social Link URLs" hint="Each icon opens its link in a new tab. Leave blank to hide that icon until a link is added.">
-          <div className="space-y-2 rounded-lg border border-border p-3">
-            {SOCIAL_PLATFORMS.filter(({ key }) => (topBar.socialPlatforms || []).includes(key)).map(({ key, label, icon: Icon }) => (
-              <div key={key} className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 w-28 shrink-0 text-[12px] text-ink-600">
-                  <Icon size={13} className="text-ink-400 shrink-0" />
-                  <span className="truncate">{label}</span>
-                </div>
-                <input
-                  value={topBar.socialLinks?.[key] || ""}
-                  onChange={(e) => setSocialLink(key, e.target.value)}
-                  placeholder="https://…"
-                  className="flex-1 min-w-0 rounded-md border border-border bg-surface-soft px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-            ))}
-          </div>
+        <Field label="Select Social Platforms" hint="Links are managed on the Settings page — pick which of your added platforms to show here.">
+          {siteSocialLinks === null ? (
+            <p className="text-[12.5px] text-ink-400 p-3">Loading social links…</p>
+          ) : availablePlatforms.length === 0 ? (
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-surface-soft/50 p-3 text-[12.5px] text-ink-500">
+              <Info size={15} className="shrink-0 mt-0.5" />
+              <span>
+                No social links have been added yet. Go to <strong>Settings → Social links</strong> to add your social media accounts and URLs — they'll then show up here to pick from.
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-surface-soft/50">
+              {availablePlatforms.map(({ platform }) => {
+                const Icon = socialPlatformIcon(platform);
+                const active = (topBar.socialPlatforms || []).includes(platform);
+                return (
+                  <button
+                    key={platform}
+                    onClick={() => toggleSocialPlatform(platform)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
+                      active
+                        ? "border-primary bg-primary text-white"
+                        : "border-border text-ink-600 hover:border-primary/40"
+                    }`}
+                  >
+                    <Icon size={12} />
+                    {socialPlatformLabel(platform)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </Field>
       )}
 

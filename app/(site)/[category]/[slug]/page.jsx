@@ -1,4 +1,3 @@
-
 import { notFound } from "next/navigation";
 import SiteChrome from "@/components/site/SiteChrome";
 import ArticlePageClient from "../../_client/ArticlePageClient";
@@ -7,12 +6,12 @@ import JsonLd from "@/components/site/JsonLd";
 import { serverApi } from "@/lib/serverApi";
 import { buildMetadata, SITE_URL, truncate } from "@/lib/seo";
 import { getInitialDeviceFromRequest } from "@/lib/getInitialDevice";
- 
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const article = await serverApi.getArticleBySlug(slug);
   if (!article) return buildMetadata({ title: "Article not found", description: "This article could not be found.", noIndex: true });
- 
+
   return buildMetadata({
     // 60 chars is the practical cutoff before Google starts truncating (and
     // flagging as "not optimized") titles in the SERP — same limit the
@@ -26,10 +25,10 @@ export async function generateMetadata({ params }) {
     type: "article",
   });
 }
- 
+
 export default async function ArticleRoute({ params }) {
   const { category: categorySlug, slug } = await params;
- 
+
   // Everything the article page needs is now fetched here, on the server,
   // in parallel — the article itself, the (single, shared) article-page
   // builder config, and the full published categories/articles/authors
@@ -51,7 +50,7 @@ export default async function ArticleRoute({ params }) {
     serverApi.getAuthors(),
   ]);
   if (!article) notFound();
- 
+
   // articlesRes is only ever used to render OTHER articles (related /
   // most-read / prev-next cards, which only show title/excerpt/image), never
   // the current one's body — but each item still carried its full `content`
@@ -64,13 +63,13 @@ export default async function ArticleRoute({ params }) {
     .filter((a) => a._id !== article._id)
     .map(({ content, contentHtml, ...rest }) => rest);
   const articlesForClient = [article, ...strippedArticles];
- 
+
   const publicConfig = config
     ? { templateId: config.templateId, blocksByTemplate: { [config.templateId]: config.blocksByTemplate[config.templateId] } }
     : config;
- 
+
   const device = getInitialDeviceFromRequest();
- 
+
   const url = `${SITE_URL}/${categorySlug}/${slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -86,7 +85,7 @@ export default async function ArticleRoute({ params }) {
     articleSection: article.category?.name,
     keywords: (article.keywords || article.tags || []).join(", ") || undefined,
   };
- 
+
   return (
     <SiteChrome>
       <JsonLd data={jsonLd} />
@@ -96,7 +95,18 @@ export default async function ArticleRoute({ params }) {
           { label: article.title },
         ]}
       />
+      {/*
+        key={slug} forces Next.js/React to unmount and remount
+        ArticlePageClient whenever the article changes — including on a
+        client-side <Link> navigation from one article to another, where
+        the [category]/[slug] route would otherwise reuse the same
+        component instance and keep its old internal state around. Without
+        this, clicking through to a new article showed the previous
+        article's (or a stale/stripped-content) state until a full page
+        reload reset everything from scratch.
+      */}
       <ArticlePageClient
+        key={slug}
         initialCategories={categories}
         initialArticles={articlesForClient}
         initialAuthors={authors}
@@ -106,4 +116,3 @@ export default async function ArticleRoute({ params }) {
     </SiteChrome>
   );
 }
- 

@@ -1,12 +1,16 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ArticleLivePreview from "@/components/article-builder/ArticleLivePreview";
 import Skeleton from "@/components/ui/Skeleton";
-import { getAllPreviewArticlesSorted } from "@/lib/articlesSource";
-import { preloadCategoriesAndArticles, seedCategoriesAndArticles } from "@/lib/categoriesArticlesApi";
+import { getAllPreviewArticlesSorted, toPreviewArticle } from "@/lib/articlesSource";
+import {
+  preloadCategoriesAndArticles,
+  seedCategoriesAndArticles,
+  normalizeArticles,
+  normalizeCategories,
+} from "@/lib/categoriesArticlesApi";
 import { preloadAuthors, seedAuthors } from "@/lib/authorsApi";
 import { getArticleDetailPageConfig } from "@/lib/articleDetailPageApi";
 import { useResponsiveDevice } from "@/lib/useResponsiveDevice";
@@ -23,6 +27,22 @@ import { useResponsiveDevice } from "@/lib/useResponsiveDevice";
 // and slow FCP/LCP/TTI issues an SEO/Lighthouse audit flags — those tools
 // only see the first HTML response, which used to be an empty shell until
 // a client-side useEffect fetch resolved. Mirrors CategoryPageClient.jsx.
+//
+// IMPORTANT — resolving the CURRENT article:
+// `seedCategoriesAndArticles()` only ever seeds the shared module-level
+// cache ONCE per page load. That's fine for the *other* articles on the
+// page (related/most-read/prev-next cards only need lightweight preview
+// data), but the server strips `content`/`contentHtml` from every article
+// in that list EXCEPT the one currently being viewed (see page.jsx). So if
+// this component read the current article back out of that shared cache,
+// clicking through to a second article (client-side nav, same component
+// instance reused by Next.js) would find that second article still
+// stripped of content from the FIRST page load's seed — showing a short/
+// teaser body instead of the real one. A hard reload "fixed" it only
+// because a full page load resets the module cache from scratch.
+// To avoid that, the current article is resolved directly from this
+// render's own fresh `initialArticles` prop (normalized on the spot, not
+// via the shared cache) every single time.
 export default function ArticlePageClient({
   initialCategories = null,
   initialArticles = null,
@@ -34,10 +54,11 @@ export default function ArticlePageClient({
   const slug = params?.slug;
 
   // Seed the shared categories/articles cache synchronously, on the very
-  // first render — not in an effect — so getAllPreviewArticlesSorted()
-  // below (which reads that cache synchronously) sees real data on the
-  // same render pass that produces the server HTML. Safe on every render:
-  // seedCategoriesAndArticles() is a no-op once the cache is populated.
+  // first render — not in an effect — so other widgets that read
+  // getAllPreviewArticlesSorted() (related articles, sidebar, prev/next)
+  // see real data immediately. This is a one-time seed by design (see
+  // note in categoriesArticlesApi.js) and is NOT what determines the
+  // current article's content — see below.
   if (initialCategories && initialArticles) {
     seedCategoriesAndArticles(initialCategories, initialArticles);
   }
@@ -46,13 +67,22 @@ export default function ArticlePageClient({
     seedAuthors(initialAuthors);
   }
 
-  // Now that the cache is seeded (if the server provided data), this finds
-  // the same preview-article shape the old client-only effect used to
-  // fetch — just synchronously, on this render, instead of a tick later.
-  const initialArticle =
-    initialCategories && initialArticles
-      ? getAllPreviewArticlesSorted().find((a) => a.slug === slug) || null
-      : null;
+  // Resolve the CURRENT article straight from this render's own fresh
+  // props, normalized the same way the cache would, but WITHOUT going
+  // through the (possibly stale, one-time-seeded) shared cache. This
+  // guarantees the full article body is always the one that belongs to
+  // `slug`, on every navigation — not just the first one.
+  const initialArticle = (() => {
+    if (!initialCategories || !initialArticles) return null;
+    const normalizedArticles = normalizeArticles(initialArticles);
+    const raw = normalizedArticles.find((a) => a.slug === slug);
+    if (!raw) return null;
+    const categories = normalizeCategories(initialCategories);
+    const categoriesById = Object.fromEntries(categories.map((c) => [c._id, c.name || c.title]));
+    const categorySlugsById = Object.fromEntries(categories.map((c) => [c._id, c.slug || ""]));
+    const authorsById = Object.fromEntries((initialAuthors || []).map((a) => [a._id, a]));
+    return toPreviewArticle(raw, categoriesById, authorsById, categorySlugsById);
+  })();
 
   const device = useResponsiveDevice(initialDevice);
   const [state, setState] = useState({
@@ -61,11 +91,20 @@ export default function ArticlePageClient({
     config: initialConfig,
   });
 
+  // Keep state in sync with fresh props on every navigation. Next.js
+  // reuses this same component instance when navigating between two
+  // articles under the same [category]/[slug] route (it doesn't remount
+  // by default), so `useState`'s initial value alone is only ever applied
+  // once — without this, a later navigation's correctly-resolved
+  // `initialArticle` would compute correctly above but never actually
+  // reach the screen, since the render below reads from `state`, not from
+  // `initialArticle` directly. (The parent also passes `key={slug}` to
+  // force a clean remount as a second line of defense — see page.jsx.)
   useEffect(() => {
-    // If the server already resolved the article + config, there's
-    // nothing to fetch — this avoids the redundant client round trip (and
-    // the skeleton flash) that used to happen on every single load.
-    if (initialArticle && initialConfig) return;
+    if (initialArticle && initialConfig) {
+      setState({ loading: false, article: initialArticle, config: initialConfig });
+      return;
+    }
     let cancelled = false;
     async function load() {
       const [, , config] = await Promise.all([
@@ -82,7 +121,8 @@ export default function ArticlePageClient({
     return () => {
       cancelled = true;
     };
-  }, [slug, initialArticle, initialConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   if (state.loading || !state.article) {
     return (

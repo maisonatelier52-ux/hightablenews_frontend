@@ -1,19 +1,43 @@
+// app/admin/settings/page.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import AdminShell from "@/components/layout/AdminShell";
-import { Settings as SettingsIcon, Loader2, Save, CheckCircle2 } from "lucide-react";
+import { Settings as SettingsIcon, Loader2, Save, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { settingsApi } from "@/apis/adminApis";
+import { SOCIAL_PLATFORM_OPTIONS } from "@/lib/socialPlatforms";
 
 const EMPTY = {
   siteName: "",
   logo: "",
   favicon: "",
   seoDefaults: { metaTitle: "", metaDescription: "", ogImage: "", keywords: [] },
-  socialLinks: { twitter: "", facebook: "", instagram: "", linkedin: "", youtube: "" },
+  // A list of { platform, url } entries rather than fixed keys, so the
+  // admin can add as many social media accounts as they like. This is the
+  // single source of truth for social URLs — the Header Builder and Footer
+  // Builder only pick which of these (the ones with a URL) to show as
+  // icons.
+  socialLinks: [],
   contact: { email: "", phone: "", address: "" },
   analytics: { googleAnalyticsId: "" },
 };
+
+/** Only entries with a valid, non-empty platform key are ever sent to the
+ *  API. This is what stops an incomplete row (platform missing/blank) from
+ *  ever reaching the backend and failing Mongoose's document-wide
+ *  validation — the cause of the "Path `platform` is required" 400. */
+function sanitizeSocialLinksForSave(list) {
+  const validKeys = SOCIAL_PLATFORM_OPTIONS.map((p) => p.key);
+  const seen = new Set();
+  const cleaned = [];
+  for (const entry of list || []) {
+    const platform = (entry?.platform || "").trim();
+    if (!platform || !validKeys.includes(platform) || seen.has(platform)) continue;
+    seen.add(platform);
+    cleaned.push({ platform, url: (entry?.url || "").trim() });
+  }
+  return cleaned;
+}
 
 function Field({ label, value, onChange, placeholder }) {
   return (
@@ -29,17 +53,90 @@ function Field({ label, value, onChange, placeholder }) {
   );
 }
 
+/** Dynamic add/remove list of { platform, url } entries. Admin picks a
+ *  platform from the supported list and types its URL. This list (filtered
+ *  to entries with a non-empty URL) is what the Header Builder and Footer
+ *  Builder offer as selectable social icons. */
+function SocialLinksEditor({ social, onChange }) {
+  const list = social || [];
+  const usedKeys = list.map((s) => s.platform);
+  const nextAvailable = SOCIAL_PLATFORM_OPTIONS.find((p) => !usedKeys.includes(p.key));
+
+  function update(idx, patch) {
+    onChange(list.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  }
+  function add() {
+    // Guard: only ever add a row with a concrete, valid platform key
+    // already attached. There is intentionally no "blank" intermediate
+    // state for a row's platform, so a half-filled entry can never exist
+    // in local state (and therefore can never be sent to the API).
+    if (!nextAvailable) return;
+    onChange([...list, { platform: nextAvailable.key, url: "" }]);
+  }
+  function remove(idx) {
+    onChange(list.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {list.map((s, idx) => (
+        <div key={idx} className="flex items-center gap-2">
+          <select
+            value={s.platform}
+            onChange={(e) => update(idx, { platform: e.target.value })}
+            className="w-40 shrink-0 rounded-lg border border-border px-2.5 py-2.5 text-[13px] text-ink-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
+          >
+            {SOCIAL_PLATFORM_OPTIONS.map((p) => (
+              <option key={p.key} value={p.key}>{p.label}</option>
+            ))}
+          </select>
+          <input
+            value={s.url || ""}
+            onChange={(e) => update(idx, { url: e.target.value })}
+            placeholder="https://…"
+            className="flex-1 min-w-0 rounded-lg border border-border px-3 py-2.5 text-[13px] text-ink-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
+          />
+          <button
+            type="button"
+            onClick={() => remove(idx)}
+            title="Remove"
+            className="shrink-0 p-2 text-ink-400 hover:text-red-500"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={add}
+        disabled={!nextAvailable}
+        className="self-start flex items-center gap-1.5 text-[12.5px] font-semibold text-primary hover:text-primary-600 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Plus size={14} /> Add social media
+      </button>
+
+      {list.length === 0 && (
+        <p className="text-[12px] text-ink-400">
+          No social links yet. Add one above — only platforms with a URL here will be available to pick in the Header Builder and Footer Builder.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
       try {
         const settings = await settingsApi.get();
-        setData({ ...EMPTY, ...settings, seoDefaults: { ...EMPTY.seoDefaults, ...(settings.seoDefaults || {}) }, socialLinks: { ...EMPTY.socialLinks, ...(settings.socialLinks || {}) }, contact: { ...EMPTY.contact, ...(settings.contact || {}) }, analytics: { ...EMPTY.analytics, ...(settings.analytics || {}) } });
+        setData({ ...EMPTY, ...settings, seoDefaults: { ...EMPTY.seoDefaults, ...(settings.seoDefaults || {}) }, socialLinks: Array.isArray(settings.socialLinks) ? settings.socialLinks : [], contact: { ...EMPTY.contact, ...(settings.contact || {}) }, analytics: { ...EMPTY.analytics, ...(settings.analytics || {}) } });
       } finally {
         setLoading(false);
       }
@@ -52,11 +149,18 @@ export default function SettingsPage() {
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setError("");
     try {
-      const updated = await settingsApi.save(data);
-      setData((p) => ({ ...p, ...updated }));
+      // Sanitize socialLinks right before sending — this is the fix for
+      // the "Path `platform` is required" 400: any row missing/invalid
+      // platform is dropped here instead of being sent to the API.
+      const payload = { ...data, socialLinks: sanitizeSocialLinksForSave(data.socialLinks) };
+      const updated = await settingsApi.save(payload);
+      setData((p) => ({ ...p, ...updated, socialLinks: Array.isArray(updated?.socialLinks) ? updated.socialLinks : payload.socialLinks }));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -92,9 +196,10 @@ export default function SettingsPage() {
 
         <section className="bg-white border border-border rounded-card p-5 flex flex-col gap-4">
           <h2 className="text-[14px] font-semibold text-ink-900">Social links</h2>
-          {Object.keys(EMPTY.socialLinks).map((k) => (
-            <Field key={k} label={k[0].toUpperCase() + k.slice(1)} value={data.socialLinks[k]} onChange={(v) => setNested("socialLinks", { [k]: v })} />
-          ))}
+          <p className="text-[12.5px] text-ink-500 -mt-2">
+            Add your social media accounts and their URLs here. The Header Builder and Footer Builder let you choose which of these icons to display — the link always comes from here.
+          </p>
+          <SocialLinksEditor social={data.socialLinks} onChange={(socialLinks) => set({ socialLinks })} />
         </section>
 
         <section className="bg-white border border-border rounded-card p-5 flex flex-col gap-4">
@@ -108,6 +213,10 @@ export default function SettingsPage() {
           <h2 className="text-[14px] font-semibold text-ink-900">Analytics</h2>
           <Field label="Google Analytics ID" value={data.analytics.googleAnalyticsId} onChange={(v) => setNested("analytics", { googleAnalyticsId: v })} placeholder="G-XXXXXXX" />
         </section>
+
+        {error && (
+          <p className="text-[12.5px] text-red-600 -mt-2">{error}</p>
+        )}
 
         <div className="flex justify-end">
           <button
