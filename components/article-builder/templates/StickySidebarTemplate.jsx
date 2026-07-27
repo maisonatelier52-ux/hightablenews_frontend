@@ -1,4 +1,5 @@
 
+
 // "use client";
 
 // import { useState } from "react";
@@ -173,10 +174,10 @@
 
 //             {data.relatedArticles?.enabled && related.length > 0 && (
 //               <section className="mt-9 pt-5" style={{ borderTop: `2px solid ${INK}` }} aria-label="Related articles">
-//                 <div className={`${SANS} text-[0.65rem] font-extrabold tracking-[0.2em] uppercase mb-[18px] flex items-center gap-3`} style={{ color: INK }}>
+//                 <h2 className={`${SANS} text-[0.65rem] font-extrabold tracking-[0.2em] uppercase mb-[18px] flex items-center gap-3`} style={{ color: INK }}>
 //                   {data.relatedArticles.title || "Related Articles"}
 //                   <span className="flex-1 h-px" style={{ background: LINE_STRONG }} />
-//                 </div>
+//                 </h2>
 //                 <div
 //                   className="grid gap-[18px]"
 //                   style={{ gridTemplateColumns: `repeat(${stacked ? 1 : Math.min(data.relatedArticles?.columns ?? 3, isTablet ? 2 : 3)}, minmax(0,1fr))` }}
@@ -592,7 +593,6 @@
 //   );
 // }
 
-
 "use client";
 
 import { useState } from "react";
@@ -665,7 +665,7 @@ export default function StickySidebarTemplate({ data, article, device = "desktop
             className={`${SANS} pt-[14px] text-[0.7rem] tracking-[0.03em] flex gap-[6px] items-center flex-wrap`}
             style={{ color: GRAY }}
           >
-            <Link href="/" className="hover:opacity-75" style={{ color: BLUE }}>Home</Link>
+            <Link href="/" title="Home" className="hover:opacity-75" style={{ color: BLUE }}>Home</Link>
             {tags.map((t, i) => (
               <span key={t} className="flex items-center gap-[6px]">
                 <span style={{ color: LINE_STRONG }}>/</span>
@@ -1022,7 +1022,7 @@ function AuthorBox({ article }) {
         <div className={`${HEAD} text-[1.2rem] font-bold mb-[2px]`} style={{ color: INK }}>{article.author || "Staff Writer"}</div>
         {article.authorRole && <div className={`${SANS} text-[0.72rem] mb-[10px] tracking-[0.03em]`} style={{ color: GRAY }}>{article.authorRole}</div>}
         {href ? (
-          <Link href={href} className={`${SANS} text-[0.65rem] font-bold tracking-[0.08em] uppercase inline-block hover:opacity-75`} style={{ color: BLUE }}>
+          <Link href={href} title={`View all articles by ${article.author || "Staff Writer"}`} className={`${SANS} text-[0.65rem] font-bold tracking-[0.08em] uppercase inline-block hover:opacity-75`} style={{ color: BLUE }}>
             View All Articles →
           </Link>
         ) : (
@@ -1043,7 +1043,7 @@ function RelatedCard({ article }) {
       <div className="h-[110px] overflow-hidden mb-[10px]" style={bgFill(article)} />
       <div className={`${SANS} text-[0.68rem] font-bold tracking-[0.12em] uppercase`} style={{ color: article.categoryColor || RED }}>{article.category}</div>
       <h3 className={`${HEAD} text-[0.9rem] font-bold leading-[1.28] mb-[5px] mt-1`} style={{ color: INK }}>
-        <Wrap {...(href ? { href } : {})} className="hover:opacity-75">{article.title}</Wrap>
+        <Wrap {...(href ? { href, title: article.title } : {})} className="hover:opacity-75">{article.title}</Wrap>
       </h3>
       <div className={`${SANS} text-[0.72rem]`} style={{ color: GRAY }}>
         By {article.author || "Staff Writer"}{article.date ? ` • ${article.date}` : ""}
@@ -1088,7 +1088,7 @@ function Sidebar({ data, article, stacked }) {
                   <div className="min-w-0">
                     <div className={`${SANS} text-[0.66rem] font-bold tracking-[0.1em] uppercase mb-[3px]`} style={{ color: RED }}>{art.category}</div>
                     <h4 className={`${HEAD} text-[0.82rem] font-bold leading-[1.25] mb-[3px]`} style={{ color: INK }}>
-                      <Item {...(href ? { href } : {})} className="hover:opacity-75">{art.title}</Item>
+                      <Item {...(href ? { href, title: art.title } : {})} className="hover:opacity-75">{art.title}</Item>
                     </h4>
                     <div className={`${SANS} text-[0.72rem]`} style={{ color: GRAY }}>{art.date}</div>
                   </div>
@@ -1112,7 +1112,7 @@ function Sidebar({ data, article, stacked }) {
                   <span className={`${SANS} text-[0.76rem] font-extrabold w-4 flex-shrink-0 pt-[1px]`} style={{ color: GRAY }}>{i + 1}</span>
                   <div className="min-w-0">
                     <h4 className={`${BODY} text-[0.8rem] leading-[1.3]`} style={{ color: INK }}>
-                      <Item {...(href ? { href } : {})} className="hover:opacity-75">{art.title}</Item>
+                      <Item {...(href ? { href, title: art.title } : {})} className="hover:opacity-75">{art.title}</Item>
                     </h4>
                     <div className={`${SANS} text-[0.72rem]`} style={{ color: GRAY }}>{art.date}</div>
                   </div>
@@ -1180,7 +1180,7 @@ function AdBox({ ad }) {
   return (
     <div style={{ width: adW, maxWidth: "100%", border: `1px solid ${LINE}`, overflow: "hidden" }}>
       {ad?.imageUrl && ad?.linkUrl ? (
-        <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer sponsored" className="block">{adBody}</a>
+        <a href={ad.linkUrl} title={ad.title || "Sponsored"} target="_blank" rel="noopener noreferrer sponsored" className="block">{adBody}</a>
       ) : adBody}
     </div>
   );
