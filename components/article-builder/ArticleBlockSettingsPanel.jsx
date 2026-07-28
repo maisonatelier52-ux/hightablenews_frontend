@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from "react";
@@ -422,7 +421,7 @@ function FieldLabel({ children }) {
 }
 
 function Accordion({ label, children }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <div className="border border-border rounded-lg overflow-hidden self-start">
       <button type="button" onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -433,4 +432,3 @@ function Accordion({ label, children }) {
     </div>
   );
 }
-
