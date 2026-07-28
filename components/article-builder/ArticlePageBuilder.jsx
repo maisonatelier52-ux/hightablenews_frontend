@@ -1,8 +1,7 @@
-
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Save, Check, Loader2, LayoutTemplate, Sparkles, Newspaper, Eye } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Save, Check, Loader2, LayoutTemplate, Sparkles, Newspaper, Eye, ChevronDown } from "lucide-react";
 
 import { getArticleDetailPageConfigAdmin as getArticleDetailPageConfig, saveArticleDetailPageConfig } from "@/lib/articleDetailPageApi";
 import { getAllPreviewArticlesSorted } from "@/lib/articlesSource";
@@ -142,12 +141,12 @@ export default function ArticlePageBuilder() {
       <div>
         <PanelHeader title="Preview" />
         <div className="rounded-xl border border-border bg-white shadow-soft overflow-hidden">
-          <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-gray-50/60 flex-wrap">
-            <span className="flex items-center gap-1.5 text-[12px] font-semibold text-ink-500 uppercase tracking-wide">
+          <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border bg-gray-50/60">
+            <span className="hidden sm:flex items-center gap-1.5 text-[12px] font-semibold text-ink-500 uppercase tracking-wide shrink-0">
               <Eye size={12} />
               Live Preview
             </span>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto justify-end">
               <PreviewArticlePicker articles={articles} value={previewArticleId} onChange={setPreviewArticleId} />
               <DeviceToggle device={device} onChange={setDevice} />
             </div>
@@ -290,20 +289,96 @@ function TemplateCard({ template, active, onApply }) {
   );
 }
 
+/** Custom-styled replacement for a native <select>. The browser's own
+ *  dropdown list can't be themed and renders at full text width (which is
+ *  what caused long article titles to spill out past the preview toolbar),
+ *  so this renders its own trigger + floating panel instead — the trigger
+ *  always truncates to one line, and the panel is a proper themed menu. */
 function PreviewArticlePicker({ articles, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+    }
+    function onKeyDown(e) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   if (articles.length === 0) return null;
+
+  const active = articles.find((a) => a.id === value) || articles[0];
+
   return (
-    <div className="flex items-center gap-1.5 h-9 rounded-lg border border-border bg-white px-2.5 max-w-[280px]">
-      <Newspaper size={13} className="text-ink-400 shrink-0" />
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="text-[12.5px] text-ink-700 focus:outline-none cursor-pointer bg-transparent truncate"
+    <div ref={rootRef} className="relative min-w-0 flex-1 sm:flex-none sm:w-[260px]">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`flex items-center gap-2 h-9 w-full rounded-lg border bg-white pl-2.5 pr-2 transition-all ${
+          open ? "border-primary ring-2 ring-primary/15" : "border-border hover:border-primary/40"
+        }`}
       >
-        {articles.map((a) => (
-          <option key={a.id} value={a.id}>Preview: {a.title}</option>
-        ))}
-      </select>
+        <Newspaper size={13} className="text-primary shrink-0" />
+        <span className="flex-1 min-w-0 text-left text-[12.5px] leading-tight truncate">
+          <span className="text-ink-400">Preview: </span>
+          <span className="text-ink-700 font-medium">{active?.title}</span>
+        </span>
+        <ChevronDown size={14} className={`text-ink-400 shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute right-0 z-30 mt-1.5 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-white shadow-2xl overflow-hidden"
+        >
+          <div className="px-3 py-2 border-b border-border bg-gray-50/70">
+            <p className="text-[10.5px] font-bold text-ink-400 uppercase tracking-wide">Preview article</p>
+          </div>
+          <ul className="max-h-72 overflow-y-auto py-1.5">
+            {articles.map((a) => {
+              const selected = a.id === value;
+              return (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    onClick={() => {
+                      onChange(a.id);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors ${
+                      selected ? "bg-primary-50" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
+                        selected ? "bg-primary text-white" : "border border-border"
+                      }`}
+                    >
+                      {selected && <Check size={10} strokeWidth={3} />}
+                    </span>
+                    <span className={`text-[12.5px] leading-snug line-clamp-2 ${selected ? "text-primary-700 font-semibold" : "text-ink-700"}`}>
+                      {a.title}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

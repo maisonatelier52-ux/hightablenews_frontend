@@ -85,7 +85,10 @@ export default function SidebarRightTemplate({ data, author, device = "desktop" 
               </div>
 
               {data.stats?.enabled && !stacked && (
-                <div className="flex-shrink-0 flex flex-col gap-5" style={{ borderLeft: `1px solid ${LINE_STRONG}`, paddingLeft: 28 }}>
+                <div
+                  className="shrink-0 flex flex-col gap-5"
+                  style={{ borderLeft: `1px solid ${LINE_STRONG}`, paddingLeft: 28, width: 220, maxWidth: 220 }}
+                >
                   <StatsBlock author={a} articlesCount={articlesCount} data={data.stats} />
                 </div>
               )}
@@ -232,10 +235,10 @@ function StatsBlock({ author, articlesCount, data, stacked = false }) {
   return (
     <div className={stacked ? "grid grid-cols-2 gap-4 w-full" : "flex flex-col gap-5"}>
       {items.map((it, i) => (
-        <div key={i} className="flex items-start gap-3">
+        <div key={i} className="flex items-start gap-3 min-w-0">
           <it.icon size={18} style={{ color: RED }} className="shrink-0 mt-[2px]" />
-          <div>
-            <div className={`${HEAD} font-bold leading-[1.1]`} style={{ fontSize: "1.15rem", color: INK }}>{it.value}</div>
+          <div className="min-w-0">
+            <div className={`${HEAD} font-bold leading-[1.25] break-words`} style={{ fontSize: "1.15rem", color: INK }}>{it.value}</div>
             <div className={`${SANS} text-[0.72rem] tracking-[0.03em]`} style={{ color: GRAY }}>{it.label}</div>
           </div>
         </div>
