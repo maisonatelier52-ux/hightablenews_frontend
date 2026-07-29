@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -160,10 +159,10 @@ export default function StickyEditorialTemplate({ data, category, device = "desk
                 <ArticleLink
                   article={hero}
                   as="article"
-                  className={`grid gap-0 mb-[22px] pb-[22px] group ${stacked ? "grid-cols-1" : "grid-cols-2"}`}
+                  className={`grid gap-0 mb-[22px] pb-[22px] group items-start ${stacked ? "grid-cols-1" : "grid-cols-2"}`}
                   style={{ borderBottom: `1px solid ${LINE_STRONG}` }}
                 >
-                  <div className="overflow-hidden" style={{ minHeight: stacked ? 200 : 240, ...imgStyle(hero, data.card?.imageRatio || "16/9") }} />
+                  <div className="overflow-hidden w-full self-start" style={{ minHeight: stacked ? 200 : 240, ...imgStyle(hero, data.card?.imageRatio || "16/9") }} />
                   <div className={stacked ? "pt-[14px] flex flex-col justify-center" : "pl-[22px] flex flex-col justify-center"}>
                     <div className="flex items-center gap-2 mb-[6px] flex-wrap">
                       {data.hero?.showLiveBadge && (
