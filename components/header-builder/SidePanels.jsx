@@ -44,9 +44,6 @@ export function RightControlsQuickCard({ rightSide, onChange }) {
       <div className="p-4 space-y-2 divide-y divide-border">
         <ToggleRow label="Search Icon" checked={rightSide.searchEnabled} onChange={(v) => set({ searchEnabled: v })} />
         <div className="pt-2">
-          <ToggleRow label="Login Button" checked={rightSide.loginButton} onChange={(v) => set({ loginButton: v })} />
-        </div>
-        <div className="pt-2">
           <ToggleRow label="Subscribe Button" checked={rightSide.subscribeButton} onChange={(v) => set({ subscribeButton: v })} />
         </div>
         <div className="pt-2">

@@ -1,9 +1,8 @@
-
 // components/header-builder/RightSideEditor.jsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, LogIn, MessageSquare, Share2, Newspaper, Info } from "lucide-react";
+import { Search, MessageSquare, Share2, Newspaper, Info } from "lucide-react";
 import { ToggleRow, Field, ColorInput } from "@/components/ui/Field";
 import { settingsApi } from "@/apis/adminApis";
 import { socialPlatformLabel, socialPlatformIcon } from "@/lib/socialPlatforms";
@@ -63,9 +62,6 @@ export default function RightSideEditor({ rightSide, onChange }) {
               </Field>
             </div>
           )}
-        </div>
-        <div className="py-3">
-          <ToggleRow icon={LogIn} label="Login Button" sub="Allow readers to sign in" checked={rightSide.loginButton} onChange={(v) => set({ loginButton: v })} />
         </div>
         <div className="py-3">
           <ToggleRow icon={MessageSquare} label="Subscribe Button" sub="Highlighted CTA button" checked={rightSide.subscribeButton} onChange={(v) => set({ subscribeButton: v })} />

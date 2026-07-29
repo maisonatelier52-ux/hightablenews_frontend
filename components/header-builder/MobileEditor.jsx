@@ -41,9 +41,6 @@ export default function MobileEditor({ mobile, onChange }) {
         <div className="pb-3">
           <ToggleRow label="Show Search Icon" checked={mobile.showSearch} onChange={(v) => set({ showSearch: v })} />
         </div>
-        <div className="py-3">
-          <ToggleRow label="Show Login" checked={mobile.showLogin} onChange={(v) => set({ showLogin: v })} />
-        </div>
         <div className="pt-3">
           <ToggleRow label="Show Subscribe Button" checked={mobile.showSubscribe} onChange={(v) => set({ showSubscribe: v })} />
         </div>

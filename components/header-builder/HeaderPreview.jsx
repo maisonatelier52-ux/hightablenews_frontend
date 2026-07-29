@@ -1,4 +1,3 @@
-
 // components/header-builder/HeaderPreview.jsx
 "use client";
  
@@ -532,7 +531,6 @@ function RightControls({ rightSide, mobile, footerSocialLinks, disableLinks, onS
           <Search size={15} />
         </button>
       )}
-      {rightSide.loginButton && <button className="text-[12px] font-semibold text-ink-700 px-1.5">Login</button>}
       {rightSide.subscribeButton && (
         <button
           type="button"
@@ -598,9 +596,8 @@ function MobileMenuItem({ item, menuStyle, accent, onNavigate, disableLinks }) {
  
 function MobileMenuFooter({ mobile, onSubscribeClick, onSearchClick }) {
   const showSearch = mobile?.showSearch ?? true;
-  const showLogin = mobile?.showLogin ?? true;
   const showSubscribe = mobile?.showSubscribe ?? true;
-  if (!showSearch && !showLogin && !showSubscribe) return null;
+  if (!showSearch && !showSubscribe) return null;
   return (
     <div className="flex items-center gap-4 pt-4 mt-1 border-t border-border">
       {showSearch && (
@@ -608,7 +605,6 @@ function MobileMenuFooter({ mobile, onSubscribeClick, onSearchClick }) {
           <Search size={14} /> Search
         </button>
       )}
-      {showLogin && <button className="text-[12.5px] font-semibold text-ink-700">Login</button>}
       {showSubscribe && (
         <button
           type="button"

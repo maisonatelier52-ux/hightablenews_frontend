@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { RotateCcw, Save, Check, Loader2, Plus, LayoutGrid, Columns3, PanelBottom, Share2, Paintbrush, Settings2 } from "lucide-react";
+import { Save, Check, Loader2, Plus, LayoutGrid, Columns3, PanelBottom, Share2, Paintbrush, Settings2 } from "lucide-react";
 
-import { getFooterAdmin as getFooter, saveFooter, makeId, DEFAULT_FOOTER } from "@/lib/api";
+import { getFooterAdmin as getFooter, saveFooter, makeId } from "@/lib/api";
 import { useAutoSave } from "@/lib/useAutoSave";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
@@ -57,10 +57,6 @@ export default function FooterBuilder() {
     [trigger]
   );
 
-  function resetToDefault() {
-    update(DEFAULT_FOOTER);
-  }
-
   function handleDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -106,9 +102,6 @@ export default function FooterBuilder() {
         </div>
         <div className="flex items-center gap-3">
           <SaveStatus status={status} />
-          <Button variant="secondary" icon={RotateCcw} onClick={resetToDefault}>
-            Reset to Default
-          </Button>
           <Button icon={Save} onClick={() => saveNow(footer)}>
             Save Footer
           </Button>

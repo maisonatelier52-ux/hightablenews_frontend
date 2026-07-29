@@ -92,7 +92,7 @@ export default function LogoEditor({ logo, onChange }) {
         </div>
       </Field>
 
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-3">
         <Field label="Logo Size">
           <Slider value={logo.size} min={20} max={80} unit="px" onChange={(v) => set({ size: v })} />
         </Field>

@@ -18,8 +18,8 @@ export function Card({ title, action, children, noPad, className = "" }) {
 
 export function Field({ label, hint, children }) {
   return (
-    <label className="block">
-      {label && <span className="block text-[12px] font-semibold text-ink-500 mb-1.5">{label}</span>}
+    <label className="block min-w-0">
+      {label && <span className="block text-[12px] font-semibold text-ink-500 mb-1.5 truncate">{label}</span>}
       {children}
       {hint && <span className="block text-[11px] text-ink-400 mt-1">{hint}</span>}
     </label>

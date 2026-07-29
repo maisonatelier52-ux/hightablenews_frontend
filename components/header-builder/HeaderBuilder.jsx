@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { RotateCcw, Save, Check, Loader2, LayoutGrid, ListTree, PanelTop, SlidersHorizontal, Radio, Smartphone, Sparkles } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Save, Check, Loader2, LayoutGrid, ListTree, PanelTop, SlidersHorizontal, Radio, Smartphone, Sparkles } from "lucide-react";
 
-import { getHeaderAdmin as getHeader, saveHeader, DEFAULT_HEADER } from "@/lib/api";
+import { getHeaderAdmin as getHeader, saveHeader } from "@/lib/api";
 import { useAutoSave } from "@/lib/useAutoSave";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
@@ -46,6 +46,19 @@ export default function HeaderBuilder() {
     });
   }, []);
 
+  const isMasthead = header?.template === "masthead";
+
+  const visibleTabs = useMemo(
+    () => (isMasthead ? TABS.filter((t) => t.value !== "rightside") : TABS),
+    [isMasthead]
+  );
+
+  useEffect(() => {
+    if (isMasthead && activeTab === "rightside") {
+      setActiveTab("layout");
+    }
+  }, [isMasthead, activeTab]);
+
   const update = useCallback(
     (next) => {
       setHeader(next);
@@ -53,10 +66,6 @@ export default function HeaderBuilder() {
     },
     [trigger]
   );
-
-  function resetToDefault() {
-    update(DEFAULT_HEADER);
-  }
 
   if (loading || !header) {
     return (
@@ -80,9 +89,6 @@ export default function HeaderBuilder() {
         </div>
         <div className="flex items-center gap-3">
           <SaveStatus status={status} />
-          <Button variant="secondary" icon={RotateCcw} onClick={resetToDefault}>
-            Reset to Default
-          </Button>
           <Button icon={Save} onClick={() => saveNow(header)}>
             Save Header
           </Button>
@@ -93,7 +99,7 @@ export default function HeaderBuilder() {
         {/* CENTER: Tabbed editor */}
         <div className="space-y-5 min-w-0">
           <Card noPad>
-            <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+            <Tabs tabs={visibleTabs} active={activeTab} onChange={setActiveTab} />
             <div className="p-4">
               {activeTab === "layout" && (
                 <div className="space-y-6">
@@ -163,7 +169,7 @@ export default function HeaderBuilder() {
                 </div>
               )}
 
-              {activeTab === "rightside" && (
+              {activeTab === "rightside" && !isMasthead && (
                 <div>
                   <h4 className="text-[13px] font-semibold text-ink-900 mb-3">Right Side Controls</h4>
                   <RightSideEditor rightSide={header.rightSide} onChange={(rightSide) => update({ ...header, rightSide })} />
@@ -202,7 +208,9 @@ export default function HeaderBuilder() {
             onChange={(topBar) => update({ ...header, topBar })}
             onOpenTab={() => setActiveTab("topbar")}
           />
-          <RightControlsQuickCard rightSide={header.rightSide} onChange={(rightSide) => update({ ...header, rightSide })} />
+          {!isMasthead && (
+            <RightControlsQuickCard rightSide={header.rightSide} onChange={(rightSide) => update({ ...header, rightSide })} />
+          )}
           <BreakingNewsQuickCard
             breakingNews={header.breakingNews}
             onChange={(breakingNews) => update({ ...header, breakingNews })}
