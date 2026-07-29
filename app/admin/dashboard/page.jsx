@@ -80,6 +80,16 @@ function daysAgoLabel(date) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+// Returns a greeting based on the current local hour.
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Good night";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  if (hour < 21) return "Good evening";
+  return "Good night";
+}
+
 export default function DashboardPage() {
   const [articles, setArticles] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -87,6 +97,14 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState(null);
   const [backendStats, setBackendStats] = useState(null);
   const [showAllActivity, setShowAllActivity] = useState(false);
+  const [greeting, setGreeting] = useState(getGreeting());
+
+  // Re-check the greeting every minute so it flips from "morning" to
+  // "afternoon" (etc.) automatically if the dashboard is left open.
+  useEffect(() => {
+    const id = setInterval(() => setGreeting(getGreeting()), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const admin = getStoredAdmin();
   const isSuperAdmin = admin?.role === "superadmin";
@@ -203,7 +221,9 @@ export default function DashboardPage() {
           />
           <div className="relative flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <h2 className="text-[22px] lg:text-[26px] font-bold text-white tracking-[-0.01em]">Good morning, Editor 👋</h2>
+              <h2 className="text-[22px] lg:text-[26px] font-bold text-white tracking-[-0.01em]">
+                {greeting}, {admin?.name || "Editor"} 👋
+              </h2>
               <p className="text-[13.5px] text-white/60 mt-1.5">Here's what's happening with HighTableNews today.</p>
             </div>
             <div className="flex items-center gap-2.5">
