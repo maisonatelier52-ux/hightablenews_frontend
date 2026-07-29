@@ -143,10 +143,6 @@ function StickyEditorialSettings({ data, setPath }) {
             <ColorField label="Button text color" value={data.sidebar?.newsletter?.buttonTextColor || "#ffffff"} onChange={(v) => setPath(["sidebar", "newsletter", "buttonTextColor"], v)} />
           </div>
         </SidebarWidgetToggle>
-        <SidebarWidgetToggle label="Topic tags" enabled={data.sidebar?.topics?.enabled} onToggle={(v) => setPath(["sidebar", "topics", "enabled"], v)}>
-          <TextField label="Title" value={data.sidebar?.topics?.title} onChange={(v) => setPath(["sidebar", "topics", "title"], v)} />
-          <TagListField tags={data.sidebar?.topics?.tags || []} onChange={(tags) => setPath(["sidebar", "topics", "tags"], tags)} />
-        </SidebarWidgetToggle>
         <SidebarWidgetToggle label="Author list" enabled={data.sidebar?.authors?.enabled} onToggle={(v) => setPath(["sidebar", "authors", "enabled"], v)}>
           <TextField label="Title" value={data.sidebar?.authors?.title} onChange={(v) => setPath(["sidebar", "authors", "title"], v)} />
           <SelectField label="Count" value={data.sidebar?.authors?.count ?? 4} onChange={(v) => setPath(["sidebar", "authors", "count"], Number(v))} options={[3, 4, 5]} />

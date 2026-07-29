@@ -1,5 +1,3 @@
-
-
 import { notFound } from "next/navigation";
 import SiteChrome from "@/components/site/SiteChrome";
 import AuthorPageClient from "../../_client/AuthorPageClient";
@@ -58,7 +56,7 @@ export default async function AuthorRoute({ params }) {
   return (
     <SiteChrome>
       <JsonLd data={jsonLd} />
-      <Breadcrumbs items={[{ label: "Authors", href: "/author" }, { label: author.name }]} />
+      <Breadcrumbs items={[{ label: "Author", href: "/author" }, { label: author.name }]} />
       <AuthorPageClient
         initialAuthor={author}
         initialCategories={categories}

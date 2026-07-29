@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import Link from "next/link";
@@ -55,19 +53,6 @@ export default function SidebarRightTemplate({ data, author, device = "desktop" 
   return (
     <div style={{ background: OFFWHITE }}>
       <div className="w-full px-4 sm:px-6 lg:px-10">
-
-        {/* Breadcrumb */}
-        <nav
-          aria-label="Breadcrumb"
-          className={`${SANS} py-[10px] text-[0.7rem] tracking-[0.03em] flex gap-[6px] items-center flex-wrap`}
-          style={{ color: GRAY }}
-        >
-          <Link href="/" title="Home" className="hover:opacity-75" style={{ color: BLUE }}>Home</Link>
-          <span style={{ color: LINE_STRONG }}>/</span>
-          <Link href="/authors" title="Authors" className="hover:opacity-75" style={{ color: BLUE }}>Authors</Link>
-          <span style={{ color: LINE_STRONG }}>/</span>
-          <span>{a.name}</span>
-        </nav>
 
         {/* ── HERO ── */}
         <div className="pb-6">

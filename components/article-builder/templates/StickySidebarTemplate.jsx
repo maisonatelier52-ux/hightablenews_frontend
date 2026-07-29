@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState } from "react";
@@ -14,6 +12,17 @@ import {
 import { imgStyle, gradFor } from "@/components/category-builder/shared";
 import { SAMPLE_ARTICLE, PrevNextNav } from "../shared";
 import NewsletterForm from "@/components/site/NewsletterForm";
+import { Twitter, Instagram, Linkedin, Facebook, Youtube, Globe, Mail } from "lucide-react";
+
+const AUTHOR_SOCIAL_ICONS = {
+  twitter: Twitter,
+  instagram: Instagram,
+  linkedin: Linkedin,
+  facebook: Facebook,
+  youtube: Youtube,
+  website: Globe,
+  email: Mail,
+};
 
 /** Template 1 — Sticky Sidebar Editorial: classic single-column article body
  *  with a right sidebar (Latest/Most Read, Newsletter, Most Commented, Ad
@@ -65,22 +74,6 @@ export default function StickySidebarTemplate({ data, article, device = "desktop
   return (
     <div style={{ background: OFFWHITE }}>
       <div className="w-full px-4 sm:px-6 lg:px-10">
-
-        {data.header?.showBreadcrumb && (
-          <nav
-            aria-label="Breadcrumb"
-            className={`${SANS} pt-[14px] text-[0.7rem] tracking-[0.03em] flex gap-[6px] items-center flex-wrap`}
-            style={{ color: GRAY }}
-          >
-            <Link href="/" title="Home" className="hover:opacity-75" style={{ color: BLUE }}>Home</Link>
-            {tags.map((t, i) => (
-              <span key={t} className="flex items-center gap-[6px]">
-                <span style={{ color: LINE_STRONG }}>/</span>
-                {i === tags.length - 1 ? <span>{t}</span> : <span style={{ color: BLUE }}>{t}</span>}
-              </span>
-            ))}
-          </nav>
-        )}
 
         <div className={stacked ? "flex flex-col gap-8 pt-[14px]" : "flex gap-0 pt-[14px] items-start"}>
 
@@ -426,16 +419,39 @@ function AuthorBox({ article }) {
       </div>
       <div className="min-w-0">
         <div className={`${SANS} text-[0.6rem] font-extrabold tracking-[0.18em] uppercase mb-1`} style={{ color: RED }}>About the Author</div>
-        <div className={`${HEAD} text-[1.2rem] font-bold mb-[2px]`} style={{ color: INK }}>{article.author || "Staff Writer"}</div>
+        <div className={`${HEAD} text-[1.2rem] font-bold mb-[2px]`} style={{ color: INK }}>
+          {href ? (
+            <Link href={href} title={`View ${article.author || "Staff Writer"}'s profile`} className="hover:text-[#8B1A1A] transition-colors">
+              {article.author || "Staff Writer"}
+            </Link>
+          ) : (
+            article.author || "Staff Writer"
+          )}
+        </div>
         {article.authorRole && <div className={`${SANS} text-[0.72rem] mb-[10px] tracking-[0.03em]`} style={{ color: GRAY }}>{article.authorRole}</div>}
-        {href ? (
-          <Link href={href} title={`View all articles by ${article.author || "Staff Writer"}`} className={`${SANS} text-[0.65rem] font-bold tracking-[0.08em] uppercase inline-block hover:opacity-75`} style={{ color: BLUE }}>
-            View All Articles →
-          </Link>
-        ) : (
-          <span className={`${SANS} text-[0.65rem] font-bold tracking-[0.08em] uppercase inline-block opacity-40`} style={{ color: BLUE }}>
-            View All Articles →
-          </span>
+        {(article.authorSocial || []).filter((s) => (s.url || "").trim()).length > 0 && (
+          <div className="flex items-center gap-2 mt-1">
+            {article.authorSocial.filter((s) => (s.url || "").trim()).map((s) => {
+              const Icon = AUTHOR_SOCIAL_ICONS[s.platform] || Globe;
+              const rawUrl = s.url.trim();
+              const isEmail = s.platform === "email";
+              const socialHref = isEmail ? (rawUrl.startsWith("mailto:") ? rawUrl : `mailto:${rawUrl}`) : rawUrl;
+              return (
+                <a
+                  key={s.id || s.platform}
+                  href={socialHref}
+                  target={isEmail ? undefined : "_blank"}
+                  rel={isEmail ? undefined : "noopener noreferrer"}
+                  aria-label={s.platform}
+                  title={s.platform}
+                  className="h-7 w-7 rounded-md border flex items-center justify-center opacity-90 transition-opacity hover:opacity-100"
+                  style={{ borderColor: LINE_STRONG, color: INK }}
+                >
+                  <Icon size={14} />
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

@@ -1006,7 +1006,7 @@ function NewspaperEditorialSettings({ data, set }) {
                 <button
                   role="switch"
                   aria-checked={!!block.visible}
-                  onClick={() => updateRightBlock(block.id, { visible: !block.visible })}
+                  onClick={() => updateRightBlock(block.id, { visible: !block.visible, enabled: !block.visible })}
                   className={`relative inline-flex h-4 w-8 shrink-0 rounded-full border-2 border-transparent transition-colors ${block.visible ? "bg-primary" : "bg-border"}`}
                 >
                   <span className={`pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow-sm transform transition-transform ${block.visible ? "translate-x-4" : "translate-x-0"}`} />
@@ -1025,7 +1025,26 @@ function NewspaperEditorialSettings({ data, set }) {
                 </div>
               </div>
             )}
-            {block.visible && block.type !== "advertisement" && (
+            {block.visible && block.type === "newsletter" && (
+              <div className="p-2 space-y-2">
+                <TextField label="Heading" value={block.heading ?? "World Briefing"} onChange={v => updateRightBlock(block.id, { heading: v })} />
+                <TextField label="Subheading" value={block.subheading ?? "Get the headlines that matter, delivered every morning."} onChange={v => updateRightBlock(block.id, { subheading: v })} />
+                <div className="grid grid-cols-2 gap-2">
+                  <TextField label="Email input placeholder" value={block.placeholder ?? "Your email address"} onChange={v => updateRightBlock(block.id, { placeholder: v })} />
+                  <TextField label="Button label" value={block.ctaLabel ?? "Subscribe"} onChange={v => updateRightBlock(block.id, { ctaLabel: v })} />
+                </div>
+                <TextField label="Success message" value={block.successMessage ?? "You're subscribed! Please check your inbox."} onChange={v => updateRightBlock(block.id, { successMessage: v })} />
+                <SectionDivider label="Colors" />
+                <div className="grid grid-cols-2 gap-2">
+                  <ColorField label="Box background" value={block.bgColor || "#111111"} onChange={v => updateRightBlock(block.id, { bgColor: v })} />
+                  <ColorField label="Heading color" value={block.headingColor || "#FAFAF8"} onChange={v => updateRightBlock(block.id, { headingColor: v })} />
+                  <ColorField label="Subheading text color" value={block.subheadingColor || "#888888"} onChange={v => updateRightBlock(block.id, { subheadingColor: v })} />
+                  <ColorField label="Button color" value={block.buttonColor || "#b91c1c"} onChange={v => updateRightBlock(block.id, { buttonColor: v })} />
+                  <ColorField label="Button text color" value={block.buttonTextColor || "#ffffff"} onChange={v => updateRightBlock(block.id, { buttonTextColor: v })} />
+                </div>
+              </div>
+            )}
+            {block.visible && block.type !== "advertisement" && block.type !== "newsletter" && (
               <div className="p-2 space-y-2">
                 <TextField label="Title" value={block.title} onChange={v => updateRightBlock(block.id, { title: v })} />
                 {block.itemCount !== undefined && (

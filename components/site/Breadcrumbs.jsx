@@ -24,7 +24,7 @@ export default function Breadcrumbs({ items = [] }) {
   };
 
   return (
-    <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-4 pt-4">
+    <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-4 md:px-10 pt-4">
       <JsonLd data={jsonLd} />
       <ol className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-ink-500">
         {full.map((item, i) => {

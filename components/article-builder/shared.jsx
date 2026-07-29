@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { Facebook, Twitter, Linkedin, Mail, MessageCircle, Send, Link2, Check, Clock, ChevronRight } from "lucide-react";
+import { Facebook, Twitter, Linkedin, Mail, MessageCircle, Send, Link2, Check, Clock, ChevronRight, Instagram, Youtube, Globe } from "lucide-react";
 import { imgStyle, gradFor } from "@/components/category-builder/shared";
 import { articleHref, authorHref } from "@/lib/articlesSource";
 import { useToast } from "@/components/ui/Toast";
@@ -395,9 +394,20 @@ export function ArticleCard({ article, imageRatio = "4/3", borderEnabled = true 
   return href ? <Link href={href} title={article.title} className={className}>{content}</Link> : <article className={className}>{content}</article>;
 }
 
+const AUTHOR_SOCIAL_ICONS = {
+  twitter: Twitter,
+  instagram: Instagram,
+  linkedin: Linkedin,
+  facebook: Facebook,
+  youtube: Youtube,
+  website: Globe,
+  email: Mail,
+};
+
 export function AuthorBox({ article }) {
   const initials = (article.author || "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   const href = authorHref(article.authorSlug);
+  const socialLinks = (article.authorSocial || []).filter((s) => (s.url || "").trim());
   return (
     <div className="rounded-lg border border-gray-100 bg-gray-50/60 p-4 flex gap-3.5">
       {article.authorImage ? (
@@ -413,10 +423,28 @@ export function AuthorBox({ article }) {
           {href ? <Link href={href} title={article.author || "Staff Writer"} className="hover:text-red-600 transition-colors">{article.author || "Staff Writer"}</Link> : (article.author || "Staff Writer")}
         </p>
         <p className="text-[12px] text-gray-500 mt-1 leading-snug">{article.authorRole}</p>
-        {href ? (
-          <Link href={href} title={`View all articles by ${article.author || "Staff Writer"}`} className="text-[11.5px] font-semibold text-red-600 mt-1.5 inline-block hover:underline">View All Articles →</Link>
-        ) : (
-          <span className="text-[11.5px] font-semibold text-red-600/50 mt-1.5 inline-block">View All Articles →</span>
+        {socialLinks.length > 0 && (
+          <div className="flex items-center gap-2 mt-1.5">
+            {socialLinks.map((s) => {
+              const Icon = AUTHOR_SOCIAL_ICONS[s.platform] || Globe;
+              const rawUrl = s.url.trim();
+              const isEmail = s.platform === "email";
+              const socialHref = isEmail ? (rawUrl.startsWith("mailto:") ? rawUrl : `mailto:${rawUrl}`) : rawUrl;
+              return (
+                <a
+                  key={s.id || s.platform}
+                  href={socialHref}
+                  target={isEmail ? undefined : "_blank"}
+                  rel={isEmail ? undefined : "noopener noreferrer"}
+                  aria-label={s.platform}
+                  title={s.platform}
+                  className="h-7 w-7 rounded-md border border-gray-200 flex items-center justify-center text-gray-700 opacity-90 transition-opacity hover:opacity-100"
+                >
+                  <Icon size={13} />
+                </a>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

@@ -392,17 +392,6 @@ function Sidebar({ data, mostRead, latest, stacked }) {
         </div>
       )}
 
-      {data.topics?.enabled && (
-        <div className="mb-6 pb-6" style={{ borderBottom: `1px solid ${LINE}` }}>
-          <ModuleHdr>{data.topics.title}</ModuleHdr>
-          <div className="flex flex-wrap gap-[6px]">
-            {(data.topics.tags || []).map((t) => (
-              <span key={t} className={`${SANS} text-[0.66rem] font-semibold tracking-[0.04em] px-[10px] py-1`} style={{ border: `1px solid ${LINE_STRONG}`, color: "#333333" }}>{t}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {data.authors?.enabled && (
         <div>
           <ModuleHdr>{data.authors.title}</ModuleHdr>

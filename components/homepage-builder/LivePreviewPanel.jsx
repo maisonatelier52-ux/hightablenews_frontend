@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { Monitor, Tablet, Smartphone, X, Plus } from "lucide-react";
+import { Monitor, Tablet, Smartphone, X, Plus, Mail } from "lucide-react";
 import { resolveArticlesForBlock, resolveSingleArticle, resolveArticlesByCategoryName, resolveTrendingArticles, pinArticleAtIndex, clearArticlePin, createArticleUsageTracker, articleHref, categoryHref, authorHref, getArticlesForAuthor, getAllPreviewArticlesSorted } from "@/lib/articlesSource";
 import { getCategories } from "@/lib/categoriesArticlesApi";
 import { getAuthors } from "@/lib/authorsApi";
@@ -1535,9 +1534,22 @@ function RightSidebar({ data, blockId, onUpdateBlock, tracker }) {
           case "newsletter":
             return (
               <div key={block.id} className="border-t border-gray-200 pt-4">
-                <p className="text-[12px] font-black uppercase tracking-widest text-gray-500 mb-2">{block.title}</p>
-                <p className="text-[13px] text-gray-600 mb-2">Get the headlines that matter, delivered every morning.</p>
-                <NewsletterForm source="sidebar" layout="stack" size="sm" placeholder="Your email address" buttonText="Subscribe" buttonBg="#b91c1c" />
+                <div className="p-[18px] text-center rounded" style={{ background: block.bgColor || "#111111" }}>
+                  <div className="flex justify-center mb-2" style={{ color: "#666666" }}><Mail size={22} /></div>
+                  <div className="text-[15px] font-bold mb-1.5 leading-snug" style={{ color: block.headingColor || "#FAFAF8" }}>{block.heading || "World Briefing"}</div>
+                  <div className="text-[12px] mb-3 leading-snug" style={{ color: block.subheadingColor || "#888888" }}>{block.subheading || "Get the headlines that matter, delivered every morning."}</div>
+                  <NewsletterForm
+                    source="sidebar"
+                    layout="stack"
+                    size="sm"
+                    placeholder={block.placeholder || "Your email address"}
+                    buttonText={block.ctaLabel || "Subscribe"}
+                    successMessage={block.successMessage || "You're subscribed! Please check your inbox."}
+                    buttonBg={block.buttonColor || "#b91c1c"}
+                    buttonTextColor={block.buttonTextColor || "#ffffff"}
+                    dark
+                  />
+                </div>
               </div>
             );
 
