@@ -44,6 +44,7 @@ export default function PagesPage() {
 
   return (
     <AdminShell title="Pages">
+       <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-ink-900 tracking-[-0.01em]">Pages</h1>
       </div>
@@ -148,6 +149,7 @@ export default function PagesPage() {
           </table>
         </div>
       )}
+        </div>
     </AdminShell>
   );
 }

@@ -61,7 +61,7 @@ export default function SitemapRobotsPage() {
 
   return (
     <AdminShell title="Sitemap & Robots">
-      <div className="max-w-[760px] mx-auto flex flex-col gap-6">
+      <div className="max-w-[760px] mx-auto flex flex-col gap-6 p-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <p className="text-[13px] text-ink-500">
             Published articles, categories, authors, and pages are added to <code>/sitemap.xml</code> automatically. Use this page for exclusions, extra URLs, and robots rules.

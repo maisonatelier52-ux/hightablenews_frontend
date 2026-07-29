@@ -51,6 +51,7 @@ export default function SubscribersPage() {
 
   return (
     <AdminShell title="Subscribers">
+       <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-ink-900 tracking-[-0.01em]">Subscribers</h1>
         <p className="text-[13px] text-ink-500 mt-0.5">Everyone who has signed up via your site's subscribe forms.</p>
@@ -118,6 +119,7 @@ export default function SubscribersPage() {
           </table>
         </div>
       )}
+      </div>
     </AdminShell>
   );
 }

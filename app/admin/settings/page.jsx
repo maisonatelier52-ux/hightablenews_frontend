@@ -180,7 +180,7 @@ export default function SettingsPage() {
 
   return (
     <AdminShell title="Settings">
-      <div className="p-4 lg:p-6 max-w-[720px] mx-auto flex flex-col gap-6">
+      <div className="p-4 lg:p-6 max-w-[720px] mx-auto flex flex-col gap-6 p-4">
 
         <section className="bg-white border border-border rounded-card p-5 flex flex-col gap-4">
           <h2 className="text-[14px] font-semibold text-ink-900 flex items-center gap-2"><SettingsIcon size={16} /> General</h2>

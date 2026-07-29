@@ -171,6 +171,7 @@ export default function PageBuilderEditor({ pageId }) {
   }
 
   return (
+     <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
     <div className="space-y-5">
       {/* Top bar */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -413,5 +414,6 @@ export default function PageBuilderEditor({ pageId }) {
 
       {showPreview && <PagePreviewModal page={page} onClose={() => setShowPreview(false)} />}
     </div>
+      </div>
   );
 }
