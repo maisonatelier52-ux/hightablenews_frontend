@@ -56,7 +56,7 @@ export default async function AuthorRoute({ params }) {
   return (
     <SiteChrome>
       <JsonLd data={jsonLd} />
-      <Breadcrumbs items={[{ label: "Author", href: "/author" }, { label: author.name }]} />
+      <Breadcrumbs items={[{ label: "Author" }, { label: author.name }]} />
       <AuthorPageClient
         initialAuthor={author}
         initialCategories={categories}

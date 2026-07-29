@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 import JsonLd from "./JsonLd";
@@ -24,7 +23,7 @@ export default function Breadcrumbs({ items = [] }) {
   };
 
   return (
-    <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-4 md:px-10 pt-4">
+    <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-4 md:px-10 mb-5 pt-4">
       <JsonLd data={jsonLd} />
       <ol className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-ink-500">
         {full.map((item, i) => {
@@ -36,7 +35,7 @@ export default function Breadcrumbs({ items = [] }) {
                   <Home size={12.5} />
                   <span>{item.label}</span>
                 </Link>
-              ) : isLast ? (
+              ) : isLast || !item.href ? (
                 <span className="font-medium text-ink-700 truncate max-w-[240px]">{item.label}</span>
               ) : (
                 <Link href={item.href} title={item.label} className="hover:text-primary transition-colors truncate max-w-[200px]">
