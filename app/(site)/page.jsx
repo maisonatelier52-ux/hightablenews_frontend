@@ -1,4 +1,4 @@
-
+// app/(site)/page.jsx
 import HomePageClient from "./_client/HomePageClient";
 import JsonLd from "@/components/site/JsonLd";
 import SiteChrome from "@/components/site/SiteChrome";
@@ -16,7 +16,7 @@ export async function generateMetadata() {
     title,
     description,
     path: "/",
-    image: settings?.seoDefaults?.ogImage,
+    // No `image` → buildMetadata uses the static logo (/image/hightablenews-logo.webp).
     siteName: settings?.siteName,
   });
 }
@@ -101,4 +101,3 @@ export default async function HomePage() {
     </SiteChrome>
   );
 }
- 

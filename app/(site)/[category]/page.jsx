@@ -1,4 +1,4 @@
-
+// app/(site)/[category]/page.jsx
 import { notFound } from "next/navigation";
 import SiteChrome from "@/components/site/SiteChrome";
 import CategoryPageClient from "../_client/CategoryPageClient";
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }) {
       155
     ),
     path: `/${slug}`,
-    image: category.image,
+    // No `image` → buildMetadata uses the static logo (/image/hightablenews-logo.webp).
   });
 }
  

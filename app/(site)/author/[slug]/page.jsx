@@ -1,3 +1,4 @@
+// app/(site)/author/[slug]/page.jsx
 import { notFound } from "next/navigation";
 import SiteChrome from "@/components/site/SiteChrome";
 import AuthorPageClient from "../../_client/AuthorPageClient";
@@ -16,6 +17,8 @@ export async function generateMetadata({ params }) {
     title: `${author.name} — Articles & Profile`,
     description: truncate(stripHtml(author.bio || `Read the latest articles by ${author.name} on HighTableNews.`), 160),
     path: `/author/${slug}`,
+    // Author pages use the author's own image for OpenGraph + Twitter
+    // (falls back to the static logo inside buildMetadata if they have none).
     image: author.profileImage || author.avatar,
     type: "profile",
   });

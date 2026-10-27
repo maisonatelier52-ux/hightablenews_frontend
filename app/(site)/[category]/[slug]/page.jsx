@@ -1,10 +1,11 @@
+// app/(site)/[category]/[slug]/page.jsx
 import { notFound } from "next/navigation";
 import SiteChrome from "@/components/site/SiteChrome";
 import ArticlePageClient from "../../_client/ArticlePageClient";
 import Breadcrumbs from "@/components/site/Breadcrumbs";
 import JsonLd from "@/components/site/JsonLd";
 import { serverApi } from "@/lib/serverApi";
-import { buildMetadata, SITE_URL, truncate } from "@/lib/seo";
+import { buildMetadata, SITE_URL, DEFAULT_OG_IMAGE, truncate } from "@/lib/seo";
 import { getInitialDeviceFromRequest } from "@/lib/getInitialDevice";
 
 export async function generateMetadata({ params }) {
@@ -21,6 +22,8 @@ export async function generateMetadata({ params }) {
     // 155-160 chars is the practical cutoff for meta descriptions.
     description: truncate(article.metaDescription || article.excerpt, 155),
     path: `/${article.category?.slug || ""}/${slug}`,
+    // Article pages use the article's own image for OpenGraph + Twitter
+    // (falls back to the static logo inside buildMetadata if it has none).
     image: article.seo?.ogImage || article.mainImage,
     type: "article",
   });
@@ -80,7 +83,7 @@ export default async function ArticleRoute({ params }) {
     datePublished: article.date,
     dateModified: article.updatedAt || article.date,
     author: article.author ? { "@type": "Person", name: article.author.name, url: `${SITE_URL}/author/${article.author.slug}` } : undefined,
-    publisher: { "@type": "Organization", name: "HighTableNews", logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` } },
+    publisher: { "@type": "Organization", name: "HighTableNews", logo: { "@type": "ImageObject", url: DEFAULT_OG_IMAGE } },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     articleSection: article.category?.name,
     keywords: (article.keywords || article.tags || []).join(", ") || undefined,

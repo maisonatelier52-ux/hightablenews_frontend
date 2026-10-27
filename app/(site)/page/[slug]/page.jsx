@@ -1,3 +1,4 @@
+// app/(site)/page/[slug]/page.jsx
 import { notFound } from "next/navigation";
 import SiteChrome from "@/components/site/SiteChrome";
 import CmsPageView from "@/components/page-builder/CmsPageView";
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }) {
       page.seo?.metaDescription ||
       truncate(stripHtml(page.blocks?.find((b) => b.type === "richText")?.data?.html || ""), 160),
     path: `/page/${slug}`,
-    image: page.seo?.ogImage,
+    // No `image` → buildMetadata uses the static logo (/image/hightablenews-logo.webp).
     noIndex: page.seo?.noIndex,
   });
 }
